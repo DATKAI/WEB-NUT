@@ -495,6 +495,9 @@ if %errorlevel% neq 0 (
 )
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0winnut-install.ps1"
+echo.
+echo Press any key to exit...
+pause >nul
 """
     from fastapi.responses import PlainTextResponse
     return PlainTextResponse(script, media_type="text/plain",
