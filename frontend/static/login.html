@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>NUT Monitor — Вход</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0;
+  display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.card { background: #1a1d27; border: 1px solid #2a2d3e; border-radius: 16px;
+  padding: 40px; width: 360px; }
+.logo { text-align: center; margin-bottom: 32px; }
+.logo h1 { font-size: 22px; font-weight: 700; color: #fff; }
+.logo p { color: #6b7280; font-size: 13px; margin-top: 4px; }
+label { display: block; font-size: 13px; color: #9ca3af; margin-bottom: 6px; }
+input { width: 100%; padding: 10px 14px; background: #0f1117; border: 1px solid #2a2d3e;
+  border-radius: 8px; color: #e0e0e0; font-size: 14px; outline: none; margin-bottom: 16px; }
+input:focus { border-color: #2563eb; }
+button { width: 100%; padding: 11px; background: #2563eb; color: #fff;
+  border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: background 0.2s; }
+button:hover { background: #1d4ed8; }
+.err { color: #ef4444; font-size: 13px; text-align: center; margin-top: 12px; display: none; }
+.icon { font-size: 40px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="icon">⚡</div>
+    <h1>NUT Monitor</h1>
+    <p>Мониторинг источников бесперебойного питания</p>
+  </div>
+  <form id="form">
+    <label>Логин</label>
+    <input type="text" id="username" placeholder="admin" autocomplete="username">
+    <label>Пароль</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    <button type="submit">Войти</button>
+    <div class="err" id="err">Неверный логин или пароль</div>
+  </form>
+</div>
+<script>
+document.getElementById('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      username: document.getElementById('username').value,
+      password: document.getElementById('password').value,
+    })
+  });
+  if (res.ok) {
+    location.href = '/';
+  } else {
+    document.getElementById('err').style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

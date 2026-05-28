@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NUT Monitor</title>
+<style>
+:root {
+  --bg: #0f1117; --card: #1a1d27; --border: #2a2d3e;
+  --text: #e0e0e0; --muted: #6b7280; --accent: #2563eb;
+  --green: #22c55e; --yellow: #f59e0b; --red: #ef4444; --purple: #a78bfa;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+/* Sidebar */
+.sidebar { width: 220px; background: var(--card); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-logo { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+.sidebar-logo h1 { font-size: 16px; font-weight: 700; color: #fff; }
+.sidebar-logo p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.nav { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--muted);
+  transition: all 0.15s; user-select: none; }
+.nav-item:hover { background: #22263a; color: var(--text); }
+.nav-item.active { background: #1e3a5f; color: #60a5fa; font-weight: 600; }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-footer { padding: 12px 8px; border-top: 1px solid var(--border); }
+.user-info { padding: 8px 12px; font-size: 12px; color: var(--muted); }
+.btn-logout { width: 100%; padding: 8px; background: transparent; border: 1px solid var(--border);
+  border-radius: 8px; color: var(--muted); cursor: pointer; font-size: 12px; }
+.btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+/* Main */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex;
+  align-items: center; justify-content: space-between; background: var(--card); }
+.topbar-title { font-size: 15px; font-weight: 600; }
+.conn-dot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.dot.off { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+.dot.live { animation: pulse 2s infinite; }
+
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* Pages */
+.page { display: none; }
+.page.active { display: block; }
+
+/* Cards */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.card + .card { margin-top: 16px; }
+.section-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 16px; }
+
+/* UPS Grid */
+.ups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.ups-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.ups-card.ol { border-left: 4px solid var(--green); }
+.ups-card.ob { border-left: 4px solid var(--yellow); }
+.ups-card.lb { border-left: 4px solid var(--red); }
+.ups-card.unknown { border-left: 4px solid var(--muted); opacity: .6; }
+
+.ups-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.ups-title { font-size: 15px; font-weight: 600; }
+.ups-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.b-ol { background: #14532d; color: var(--green); }
+.b-ob { background: #451a03; color: var(--yellow); }
+.b-lb { background: #450a0a; color: var(--red); }
+.b-chrg { background: #1e3a5f; color: #60a5fa; }
+.b-off { background: #1f2937; color: var(--muted); }
+
+.bar-wrap { margin-bottom: 14px; }
+.bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.bar-track { background: #2a2d3e; border-radius: 6px; height: 8px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 6px; transition: width .6s; }
+.bar-green { background: linear-gradient(90deg,#16a34a,#22c55e); }
+.bar-yellow { background: linear-gradient(90deg,#d97706,#f59e0b); }
+.bar-red { background: linear-gradient(90deg,#dc2626,#ef4444); }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.stat { background: #0f1117; border-radius: 8px; padding: 10px 12px; }
+.stat-l { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.stat-v { font-size: 17px; font-weight: 600; }
+.stat-u { font-size: 10px; color: var(--muted); margin-left: 2px; }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer;
+  font-size: 12px; font-weight: 600; transition: opacity .2s; }
+.btn:hover { opacity: .8; }
+.btn-blue { background: var(--accent); color: #fff; }
+.btn-yellow { background: #d97706; color: #fff; }
+.btn-red { background: #dc2626; color: #fff; }
+.btn-gray { background: #374151; color: var(--text); }
+.btn-green { background: #16a34a; color: #fff; }
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Chart */
+.chart-wrap { position: relative; height: 160px; margin-top: 12px; }
+canvas { width: 100% !important; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 11px;
+  text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid #1f2333; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #1f2333; }
+
+/* Events */
+.ev-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; align-items: flex-start; }
+.ev-row:last-child { border-bottom: none; }
+.ev-ts { color: var(--muted); min-width: 130px; }
+.ev-ups { color: #60a5fa; min-width: 80px; font-weight: 600; }
+.ev-msg { color: #d1d5db; }
+
+/* Forms */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+label { font-size: 12px; color: var(--muted); }
+input, select { padding: 9px 12px; background: #0f1117; border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 13px; outline: none; width: 100%; }
+input:focus, select:focus { border-color: var(--accent); }
+select option { background: #1a1d27; }
+
+/* Modal */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex;
+  align-items: center; justify-content: center; z-index: 100; display: none; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 28px; width: 480px; max-width: 95vw; }
+.modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 18px;
+  border-radius: 8px; font-size: 13px; font-weight: 500;
+  opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 200; }
+.toast.ok { background: #14532d; color: var(--green); border: 1px solid #16a34a; }
+.toast.err { background: #450a0a; color: var(--red); border: 1px solid #dc2626; }
+.toast.show { opacity: 1; }
+
+/* NUT Status */
+.svc-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.svc-row:last-child { border-bottom: none; }
+.svc-dot { width: 8px; height: 8px; border-radius: 50%; }
+.svc-active { background: var(--green); }
+.svc-inactive { background: var(--red); }
+
+/* Scan result */
+.scan-item { background: #0f1117; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+.scan-item h4 { font-size: 13px; margin-bottom: 6px; }
+.scan-item p { font-size: 11px; color: var(--muted); }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+.tab { padding: 9px 16px; font-size: 13px; cursor: pointer; color: var(--muted);
+  border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; }
+.tab.active { color: #60a5fa; border-bottom-color: #60a5fa; font-weight: 600; }
+.tab:hover { color: var(--text); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .ups-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>⚡ NUT Monitor</h1>
+    <p>UPS Management Panel</p>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span>Дашборд</div>
+    <div class="nav-item" data-page="devices"><span class="icon">🔌</span>Устройства</div>
+    <div class="nav-item" data-page="events"><span class="icon">📋</span>События</div>
+    <div class="nav-item" data-page="nut"><span class="icon">⚙️</span>NUT Сервер</div>
+    <div class="nav-item admin-only" data-page="users"><span class="icon">👥</span>Пользователи</div>
+    <div class="nav-item admin-only" data-page="settings"><span class="icon">🔔</span>Уведомления</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info" id="user-info"></div>
+    <button class="btn-logout" onclick="logout()">Выйти</button>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="page-title">Дашборд</span>
+    <div class="conn-dot">
+      <div class="dot live" id="ws-dot"></div>
+      <span id="ws-status">Подключение...</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="ups-grid" id="ups-grid"></div>
+      <div class="card">
+        <div class="section-title">Последние события</div>
+        <div id="dash-events"><div style="color:var(--muted);font-size:13px">Нет событий</div></div>
+      </div>
+    </div>
+
+    <!-- DEVICES -->
+    <div class="page" id="page-devices">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="section-title" style="margin:0">Устройства ИБП</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-gray btn-sm" onclick="scanUps()">🔍 Сканировать USB</button>
+          <button class="btn btn-blue btn-sm admin-only" onclick="openAddUps()">+ Добавить</button>
+        </div>
+      </div>
+      <div class="card">
+        <table id="devices-table">
+          <thead><tr><th>Имя</th><th>Модель</th><th>Статус</th><th>Включён</th><th>Действия</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="scan-results" style="margin-top:16px;display:none">
+        <div class="section-title">Найдены устройства</div>
+        <div id="scan-list"></div>
+      </div>
+    </div>
+
+    <!-- EVENTS -->
+    <div class="page" id="page-events">
+      <div class="card">
+        <div class="section-title">Журнал событий</div>
+        <div id="events-list"></div>
+      </div>
+    </div>
+
+    <!-- NUT SERVER -->
+    <div class="page" id="page-nut">
+      <div class="tabs">
+        <div class="tab active" data-tab="nut-status">Статус</div>
+        <div class="tab admin-only" data-tab="nut-config">Конфигурация</div>
+        <div class="tab admin-only" data-tab="nut-users">NUT Пользователи</div>
+      </div>
+
+      <div class="tab-pane active" id="tab-nut-status">
+        <div class="card" style="margin-bottom:16px">
+          <div class="section-title">Сервисы</div>
+          <div id="nut-services"></div>
+          <div style="margin-top:16px;display:flex;gap:8px">
+            <button class="btn btn-blue btn-sm admin-only" onclick="restartNut()">🔄 Перезапустить NUT</button>
+            <button class="btn btn-gray btn-sm admin-only" onclick="applyNutConfig()">✅ Применить конфиг</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="tab-nut-config">
+        <div class="card">
+          <div class="section-title">Настройки NUT сервера</div>
+          <div class="form-grid" style="max-width:500px">
+            <div class="form-group">
+              <label>NUT admin логин</label>
+              <input id="nut_admin_user" placeholder="admin">
+            </div>
+            <div class="form-group">
+              <label>NUT admin пароль</label>
+              <input id="nut_admin_pass" type="password" placeholder="••••••••">
+            </div>
+            <div class="form-group">
+              <label>Порог низкого заряда (%)</label>
+              <input id="low_batt_threshold" type="number" placeholder="30">
+            </div>
+            <div class="form-group">
+              <label>Задержка shutdown (сек)</label>
+              <input id="shutdown_delay" type="number" placeholder="60">
+            </div>
+            <div class="form-group">
+              <label>Интервал опроса (сек)</label>
+              <input id="poll_interval" type="number" placeholder="3">
+            </div>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn btn-blue" onclick="saveNutSettings()">Сохранить</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="tab-nut-users">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="section-title" style="margin:0">NUT пользователи (upsd.users)</div>
+          <button class="btn btn-blue btn-sm" onclick="openAddNutUser()">+ Добавить</button>
+        </div>
+        <div class="card">
+          <table id="nut-users-table">
+            <thead><tr><th>Логин</th><th>Роль</th><th>Права</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="section-title" style="margin:0">Пользователи панели</div>
+        <button class="btn btn-blue btn-sm" onclick="openAddUser()">+ Добавить</button>
+      </div>
+      <div class="card">
+        <table id="users-table">
+          <thead><tr><th>Логин</th><th>Роль</th><th>Создан</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="tabs">
+        <div class="tab active" data-tab="s-tg">Telegram</div>
+        <div class="tab" data-tab="s-email">Email / SMTP</div>
+        <div class="tab" data-tab="s-notify">Правила</div>
+      </div>
+
+      <div class="tab-pane active" id="tab-s-tg">
+        <div class="card">
+          <div class="section-title">Telegram уведомления</div>
+          <div class="form-grid" style="max-width:500px">
+            <div class="form-group full">
+              <label>Bot Token</label>
+              <input id="tg_token" placeholder="123456789:AAF...">
+            </div>
+            <div class="form-group full">
+              <label>Chat ID</label>
+              <input id="tg_chat_id" placeholder="-100123456789">
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px">
+            <button class="btn btn-blue" onclick="saveSettings(['tg_token','tg_chat_id'])">Сохранить</button>
+            <button class="btn btn-gray" onclick="testTg()">📨 Тест</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="tab-s-email">
+        <div class="card">
+          <div class="section-title">Email / SMTP</div>
+          <div class="form-grid" style="max-width:500px">
+            <div class="form-group">
+              <label>SMTP сервер</label>
+              <input id="smtp_host" placeholder="smtp.gmail.com">
+            </div>
+            <div class="form-group">
+              <label>Порт</label>
+              <input id="smtp_port" placeholder="587" type="number">
+            </div>
+            <div class="form-group">
+              <label>Логин</label>
+              <input id="smtp_user" placeholder="you@gmail.com">
+            </div>
+            <div class="form-group">
+              <label>Пароль</label>
+              <input id="smtp_password" type="password" placeholder="••••••••">
+            </div>
+            <div class="form-group full">
+              <label>Получатель (To)</label>
+              <input id="smtp_to" placeholder="admin@company.com">
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px">
+            <button class="btn btn-blue" onclick="saveSettings(['smtp_host','smtp_port','smtp_user','smtp_password','smtp_to'])">Сохранить</button>
+            <button class="btn btn-gray" onclick="testEmail()">📧 Тест</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="tab-s-notify">
+        <div class="card">
+          <div class="section-title">Правила уведомлений</div>
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:400px">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+              <input type="checkbox" id="notify_onbatt"> Переход на батарею (OB)
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+              <input type="checkbox" id="notify_lowbatt"> Низкий заряд (LB)
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+              <input type="checkbox" id="notify_online"> Восстановление питания (OL)
+            </label>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn btn-blue" onclick="saveSettings(['notify_onbatt','notify_lowbatt','notify_online'])">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- Modals -->
+<div class="modal-bg" id="modal-add-ups">
+  <div class="modal">
+    <h3>Добавить ИБП</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Имя (латиница)</label><input id="add-ups-name" placeholder="ippon"></div>
+      <div class="form-group"><label>Описание</label><input id="add-ups-desc" placeholder="Ippon 2000VA"></div>
+      <div class="form-group"><label>Vendor ID</label><input id="add-ups-vendor" placeholder="06DA"></div>
+      <div class="form-group"><label>Product ID</label><input id="add-ups-product" placeholder="FFFF"></div>
+      <div class="form-group full"><label>Серийный номер</label><input id="add-ups-serial" placeholder="N06E10F4200076"></div>
+      <div class="form-group"><label>Драйвер</label>
+        <select id="add-ups-driver">
+          <option>usbhid-ups</option><option>blazer_ser</option><option>megatec</option><option>apcsmart</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Порт</label><input id="add-ups-port" value="auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modal-add-ups')">Отмена</button>
+      <button class="btn btn-blue" onclick="addUps()">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-add-user">
+  <div class="modal">
+    <h3>Добавить пользователя панели</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Логин</label><input id="add-user-name"></div>
+      <div class="form-group"><label>Пароль</label><input id="add-user-pass" type="password"></div>
+      <div class="form-group full"><label>Роль</label>
+        <select id="add-user-role"><option value="viewer">Viewer (только просмотр)</option><option value="admin">Admin (полный доступ)</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modal-add-user')">Отмена</button>
+      <button class="btn btn-blue" onclick="addUser()">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-add-nut-user">
+  <div class="modal">
+    <h3>Добавить NUT пользователя</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Логин</label><input id="add-nu-name"></div>
+      <div class="form-group"><label>Пароль</label><input id="add-nu-pass" type="password"></div>
+      <div class="form-group full"><label>Роль</label>
+        <select id="add-nu-role"><option value="slave">slave (клиент)</option><option value="master">master</option></select>
+      </div>
+      <div class="form-group"><label>Actions</label><input id="add-nu-actions" placeholder="SET"></div>
+      <div class="form-group"><label>Instcmds</label><input id="add-nu-instcmds" placeholder="ALL"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modal-add-nut-user')">Отмена</button>
+      <button class="btn btn-blue" onclick="addNutUser()">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-commands">
+  <div class="modal">
+    <h3 id="modal-cmd-title">Команды UPS</h3>
+    <div id="modal-cmd-list" style="max-height:300px;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modal-commands')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentRole = 'viewer';
+let currentUpsData = {};
+let ws = null;
+let charts = {};
+
+// ─── Init ───
+async function init() {
+  try {
+    const r = await api('/api/auth/me');
+    currentRole = r.role;
+    document.getElementById('user-info').textContent = `👤 ${r.username} (${r.role})`;
+    if (r.role !== 'admin') {
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+    }
+    loadSettings();
+    connectWs();
+    loadDevicesTable();
+    loadNutUsers();
+    loadUsers();
+    loadNutServices();
+    loadEvents();
+  } catch {
+    location.href = '/login';
+  }
+}
+
+// ─── Navigation ───
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    item.classList.add('active');
+    const page = item.dataset.page;
+    document.getElementById('page-' + page).classList.add('active');
+    document.getElementById('page-title').textContent = item.textContent.trim();
+    if (page === 'events') loadEvents();
+    if (page === 'nut') loadNutServices();
+    if (page === 'devices') loadDevicesTable();
+    if (page === 'users') loadUsers();
+  });
+});
+
+document.querySelectorAll('.tabs .tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const container = tab.closest('.page, .main');
+    tab.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const id = tab.dataset.tab;
+    tab.closest('.card, .page, div').parentElement.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+  });
+});
+
+// ─── WebSocket ───
+function connectWs() {
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => {
+    document.getElementById('ws-dot').className = 'dot live';
+    document.getElementById('ws-status').textContent = 'Онлайн';
+  };
+  ws.onmessage = e => {
+    const data = JSON.parse(e.data);
+    if (data.ups) { currentUpsData = data.ups; renderDashboard(data.ups); }
+    if (data.events) renderDashEvents(data.events);
+    if (data.nut_status) renderNutStatus(data.nut_status);
+  };
+  ws.onclose = () => {
+    document.getElementById('ws-dot').className = 'dot off';
+    document.getElementById('ws-status').textContent = 'Переподключение...';
+    setTimeout(connectWs, 3000);
+  };
+  ws.onerror = () => ws.close();
+}
+
+// ─── Dashboard ───
+function renderDashboard(ups) {
+  const grid = document.getElementById('ups-grid');
+  const existing = {};
+  grid.querySelectorAll('[data-ups]').forEach(el => existing[el.dataset.ups] = el);
+
+  for (const [name, info] of Object.entries(ups)) {
+    const cls = cardClass(info.status);
+    const pct = info.charge ?? 0;
+
+    if (!existing[name]) {
+      const card = document.createElement('div');
+      card.className = `ups-card ${cls}`;
+      card.dataset.ups = name;
+      card.innerHTML = upsCardHtml(name, info, pct, cls);
+      grid.appendChild(card);
+    } else {
+      const card = existing[name];
+      card.className = `ups-card ${cls}`;
+      card.innerHTML = upsCardHtml(name, info, pct, cls);
+    }
+  }
+}
+
+function upsCardHtml(name, info, pct, cls) {
+  const barCls = pct >= 60 ? 'bar-green' : pct >= 30 ? 'bar-yellow' : 'bar-red';
+  const loadPct = info.load ?? 0;
+  const loadBar = loadPct >= 80 ? 'bar-red' : loadPct >= 60 ? 'bar-yellow' : 'bar-green';
+
+  return `
+    <div class="ups-head">
+      <div>
+        <div class="ups-title">${info.mfr || ''} ${info.model || name}</div>
+        <div class="ups-sub">${name} · ${info.serial || ''}</div>
+      </div>
+      <div class="badges">${statusBadges(info.status)}</div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-label"><span>Заряд батареи</span><span>${info.charge ?? '?'}%</span></div>
+      <div class="bar-track"><div class="bar-fill ${barCls}" style="width:${pct}%"></div></div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-label"><span>Нагрузка</span><span>${info.load ?? '?'}%</span></div>
+      <div class="bar-track"><div class="bar-fill ${loadBar}" style="width:${loadPct}%"></div></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-l">Вход</div><div class="stat-v">${info.input_voltage ?? '?'}<span class="stat-u">V</span></div></div>
+      <div class="stat"><div class="stat-l">Выход</div><div class="stat-v">${info.output_voltage ?? '?'}<span class="stat-u">V</span></div></div>
+      <div class="stat"><div class="stat-l">Частота</div><div class="stat-v">${info.input_freq ?? '?'}<span class="stat-u">Hz</span></div></div>
+      <div class="stat"><div class="stat-l">Запас хода</div><div class="stat-v" style="color:var(--purple)">${fmtRuntime(info.runtime)}</div></div>
+      ${info.temperature ? `<div class="stat"><div class="stat-l">Темп. АКБ</div><div class="stat-v">${info.temperature}<span class="stat-u">°C</span></div></div>` : `<div class="stat"><div class="stat-l">АКБ напр.</div><div class="stat-v">${info.battery_voltage ?? '?'}<span class="stat-u">V</span></div></div>`}
+      <div class="stat"><div class="stat-l">Беeper</div><div class="stat-v" style="font-size:13px">${info.beeper || '—'}</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-blue btn-sm" onclick="sendCmd('${name}','test.battery.start')">▶ Тест</button>
+      <button class="btn btn-gray btn-sm" onclick="sendCmd('${name}','test.battery.stop')">■ Стоп</button>
+      <button class="btn btn-yellow btn-sm" onclick="sendCmd('${name}','beeper.toggle')">🔔</button>
+      <button class="btn btn-outline btn-sm" onclick="openCommands('${name}')">Все команды</button>
+    </div>`;
+}
+
+function renderDashEvents(events) {
+  const el = document.getElementById('dash-events');
+  if (!events.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет событий</div>'; return; }
+  el.innerHTML = events.slice(0,8).map(e =>
+    `<div class="ev-row"><span class="ev-ts">${e.ts}</span><span class="ev-ups">${e.ups}</span><span class="ev-msg">${e.message}</span></div>`
+  ).join('');
+}
+
+// ─── Devices ───
+async function loadDevicesTable() {
+  const devices = await api('/api/ups/all');
+  const tbody = document.querySelector('#devices-table tbody');
+  tbody.innerHTML = devices.map(d => `
+    <tr>
+      <td><b>${d.name}</b></td>
+      <td>${d.description || '—'}</td>
+      <td><code style="font-size:11px">${d.driver} / ${d.vendorid}:${d.productid}</code></td>
+      <td>
+        <input type="checkbox" ${d.enabled ? 'checked' : ''} onchange="toggleUps('${d.name}',this.checked)" ${currentRole!=='admin'?'disabled':''}>
+      </td>
+      <td>${currentRole==='admin' ? `<button class="btn btn-red btn-sm" onclick="deleteUps('${d.name}')">Удалить</button>` : ''}</td>
+    </tr>
+  `).join('');
+}
+
+async function scanUps() {
+  toast('Сканирование USB...', 'ok');
+  const results = await api('/api/ups/scan');
+  const wrap = document.getElementById('scan-results');
+  const list = document.getElementById('scan-list');
+  wrap.style.display = 'block';
+  if (!results.length) { list.innerHTML = '<div style="color:var(--muted);font-size:13px">Устройства не найдены</div>'; return; }
+  list.innerHTML = results.map((d,i) => `
+    <div class="scan-item">
+      <h4>${d.vendor || ''} ${d.product || 'HID UPS'}</h4>
+      <p>Vendor: ${d.vendorid} · Product: ${d.productid} · Serial: ${d.serial || '—'} · Bus: ${d.bus || '—'}</p>
+      ${currentRole==='admin' ? `<button class="btn btn-green btn-sm" style="margin-top:8px" onclick="prefillUps(${i})">+ Добавить</button>` : ''}
+    </div>
+  `).join('');
+  window._scanResults = results;
+}
+
+function prefillUps(i) {
+  const d = window._scanResults[i];
+  document.getElementById('add-ups-vendor').value = d.vendorid || '';
+  document.getElementById('add-ups-product').value = d.productid || '';
+  document.getElementById('add-ups-serial').value = d.serial || '';
+  document.getElementById('add-ups-desc').value = (d.vendor || '') + ' ' + (d.product || '');
+  openModal('modal-add-ups');
+}
+
+function openAddUps() { openModal('modal-add-ups'); }
+
+async function addUps() {
+  await api('/api/ups/add', 'POST', {
+    name: v('add-ups-name'), description: v('add-ups-desc'),
+    vendorid: v('add-ups-vendor'), productid: v('add-ups-product'),
+    serial: v('add-ups-serial'), driver: v('add-ups-driver'), port: v('add-ups-port'),
+  });
+  closeModal('modal-add-ups');
+  toast('ИБП добавлен', 'ok');
+  loadDevicesTable();
+}
+
+async function deleteUps(name) {
+  if (!confirm(`Удалить ${name}?`)) return;
+  await api(`/api/ups/${name}`, 'DELETE');
+  toast('Удалено', 'ok');
+  loadDevicesTable();
+}
+
+async function toggleUps(name, enabled) {
+  await api(`/api/ups/${name}/toggle`, 'POST', { enabled: enabled ? 1 : 0 });
+}
+
+// ─── Commands ───
+async function openCommands(upsName) {
+  document.getElementById('modal-cmd-title').textContent = `Команды: ${upsName}`;
+  document.getElementById('modal-cmd-list').innerHTML = '<div style="color:var(--muted)">Загрузка...</div>';
+  openModal('modal-commands');
+  const cmds = await api(`/api/ups/${upsName}/commands`);
+  if (!cmds.length) {
+    document.getElementById('modal-cmd-list').innerHTML = '<div style="color:var(--muted)">Нет доступных команд</div>';
+    return;
+  }
+  document.getElementById('modal-cmd-list').innerHTML = cmds.map(c => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;font-weight:600">${c.name}</div><div style="font-size:11px;color:var(--muted)">${c.desc}</div></div>
+      <button class="btn btn-blue btn-sm" onclick="sendCmd('${upsName}','${c.name}')">▶</button>
+    </div>
+  `).join('');
+}
+
+async function sendCmd(ups, cmd) {
+  const r = await api(`/api/ups/${ups}/command/${cmd}`, 'POST');
+  toast(r.result || r.error || 'Команда отправлена', r.ok ? 'ok' : 'err');
+}
+
+// ─── Events ───
+async function loadEvents() {
+  const events = await api('/api/events');
+  const el = document.getElementById('events-list');
+  if (!events.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет событий</div>'; return; }
+  el.innerHTML = events.map(e =>
+    `<div class="ev-row"><span class="ev-ts">${e.ts}</span><span class="ev-ups">${e.ups}</span><span class="ev-msg">${e.message}</span></div>`
+  ).join('');
+}
+
+// ─── NUT Server ───
+async function loadNutServices() {
+  const st = await api('/api/nut/status');
+  renderNutStatus(st);
+}
+
+function renderNutStatus(st) {
+  document.getElementById('nut-services').innerHTML = Object.entries(st).map(([svc, status]) => `
+    <div class="svc-row">
+      <div class="svc-dot ${status === 'active' ? 'svc-active' : 'svc-inactive'}"></div>
+      <span style="font-size:13px;flex:1">${svc}</span>
+      <span style="font-size:12px;color:${status==='active'?'var(--green)':'var(--red)'}">${status}</span>
+    </div>
+  `).join('');
+}
+
+async function restartNut() {
+  if (!confirm('Перезапустить NUT? Клиенты кратко потеряют связь.')) return;
+  const r = await api('/api/nut/restart', 'POST');
+  toast(r.ok ? 'NUT перезапущен' : r.error, r.ok ? 'ok' : 'err');
+}
+
+async function applyNutConfig() {
+  const r = await api('/api/nut/apply', 'POST');
+  toast(r.ok ? 'Конфиг применён и NUT перезапущен' : r.error, r.ok ? 'ok' : 'err');
+}
+
+// ─── NUT Users ───
+async function loadNutUsers() {
+  const users = await api('/api/nut-users');
+  const tbody = document.querySelector('#nut-users-table tbody');
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><b>${u.username}</b></td>
+      <td>${u.role}</td>
+      <td><small>${u.actions || '—'} / ${u.instcmds || '—'}</small></td>
+      <td>${currentRole==='admin' ? `<button class="btn btn-red btn-sm" onclick="deleteNutUser('${u.username}')">Удалить</button>` : ''}</td>
+    </tr>
+  `).join('');
+}
+
+function openAddNutUser() { openModal('modal-add-nut-user'); }
+
+async function addNutUser() {
+  await api('/api/nut-users', 'POST', {
+    username: v('add-nu-name'), password: v('add-nu-pass'),
+    role: v('add-nu-role'), actions: v('add-nu-actions'), instcmds: v('add-nu-instcmds'),
+  });
+  closeModal('modal-add-nut-user');
+  toast('Пользователь добавлен', 'ok');
+  loadNutUsers();
+}
+
+async function deleteNutUser(username) {
+  if (!confirm(`Удалить NUT пользователя ${username}?`)) return;
+  await api(`/api/nut-users/${username}`, 'DELETE');
+  toast('Удалено', 'ok');
+  loadNutUsers();
+}
+
+// ─── Panel Users ───
+async function loadUsers() {
+  const users = await api('/api/users');
+  const tbody = document.querySelector('#users-table tbody');
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><b>${u.username}</b></td>
+      <td><span class="badge ${u.role==='admin'?'b-ob':'b-off'}">${u.role}</span></td>
+      <td style="color:var(--muted);font-size:12px">${u.created_at || '—'}</td>
+      <td><button class="btn btn-red btn-sm" onclick="deleteUser(${u.id})">Удалить</button></td>
+    </tr>
+  `).join('');
+}
+
+function openAddUser() { openModal('modal-add-user'); }
+
+async function addUser() {
+  await api('/api/users', 'POST', {
+    username: v('add-user-name'), password: v('add-user-pass'), role: v('add-user-role'),
+  });
+  closeModal('modal-add-user');
+  toast('Пользователь добавлен', 'ok');
+  loadUsers();
+}
+
+async function deleteUser(id) {
+  if (!confirm('Удалить пользователя?')) return;
+  await api(`/api/users/${id}`, 'DELETE');
+  toast('Удалено', 'ok');
+  loadUsers();
+}
+
+// ─── Settings ───
+async function loadSettings() {
+  if (currentRole !== 'admin') return;
+  const s = await api('/api/settings');
+  const fields = ['tg_token','tg_chat_id','smtp_host','smtp_port','smtp_user','smtp_password','smtp_to',
+                  'nut_admin_user','nut_admin_pass','low_batt_threshold','shutdown_delay','poll_interval'];
+  fields.forEach(k => { const el = document.getElementById(k); if (el) el.value = s[k] || ''; });
+  ['notify_onbatt','notify_lowbatt','notify_online'].forEach(k => {
+    const el = document.getElementById(k);
+    if (el) el.checked = s[k] === '1';
+  });
+}
+
+async function saveSettings(keys) {
+  const body = {};
+  keys.forEach(k => {
+    const el = document.getElementById(k);
+    if (!el) return;
+    body[k] = el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value;
+  });
+  await api('/api/settings', 'POST', body);
+  toast('Настройки сохранены', 'ok');
+}
+
+async function saveNutSettings() {
+  await saveSettings(['nut_admin_user','nut_admin_pass','low_batt_threshold','shutdown_delay','poll_interval']);
+}
+
+async function testTg() {
+  await saveSettings(['tg_token','tg_chat_id']);
+  const r = await api('/api/settings/test-telegram', 'POST');
+  toast(r.ok ? 'Telegram: сообщение отправлено!' : 'Ошибка отправки', r.ok ? 'ok' : 'err');
+}
+
+async function testEmail() {
+  await saveSettings(['smtp_host','smtp_port','smtp_user','smtp_password','smtp_to']);
+  const r = await api('/api/settings/test-email', 'POST');
+  toast(r.ok ? 'Email отправлен!' : 'Ошибка отправки', r.ok ? 'ok' : 'err');
+}
+
+// ─── Auth ───
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  location.href = '/login';
+}
+
+// ─── Helpers ───
+async function api(url, method='GET', body=null) {
+  const opts = { method, headers: {} };
+  if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  const r = await fetch(url, opts);
+  if (r.status === 401) { location.href = '/login'; throw new Error('401'); }
+  return r.json();
+}
+
+function v(id) { return document.getElementById(id)?.value || ''; }
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function fmtRuntime(sec) {
+  if (!sec) return '?';
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  return h > 0 ? `${h}ч ${m}м` : `${m}м`;
+}
+
+function cardClass(status) {
+  if (!status || status === 'UNKNOWN') return 'unknown';
+  if (status.includes('LB')) return 'lb';
+  if (status.includes('OB')) return 'ob';
+  return 'ol';
+}
+
+function statusBadges(status) {
+  if (!status || status === 'UNKNOWN') return '<span class="badge b-off">OFFLINE</span>';
+  return status.split(' ').map(p => {
+    if (p==='OL') return '<span class="badge b-ol">OL</span>';
+    if (p==='OB') return '<span class="badge b-ob">OB</span>';
+    if (p==='LB') return '<span class="badge b-lb">LB</span>';
+    if (p==='CHRG') return '<span class="badge b-chrg">CHRG</span>';
+    return `<span class="badge b-off">${p}</span>`;
+  }).join(' ');
+}
+
+// Push уведомления
+if ('Notification' in window) {
+  Notification.requestPermission();
+}
+function pushNotify(title, body) {
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '/static/icon.png' });
+  }
+}
+
+// Отслеживание смены статуса для push
+let prevUpsStatus = {};
+function checkPushNotify(ups) {
+  for (const [name, info] of Object.entries(ups)) {
+    const st = info.status;
+    const prev = prevUpsStatus[name];
+    if (prev && prev !== st) {
+      if (st.includes('OB')) pushNotify('⚠️ UPS на батарее', `${name}: ${st}`);
+      if (st.includes('LB')) pushNotify('🔴 Низкий заряд!', `${name}: ${st}`);
+      if (st.includes('OL') && prev.includes('OB')) pushNotify('✅ Питание восстановлено', `${name}: ${st}`);
+    }
+    prevUpsStatus[name] = st;
+  }
+}
+
+// Перехватываем WS данные для push
+const origRenderDashboard = renderDashboard;
+
+init();
+</script>
+</body>
+</html>
