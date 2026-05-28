@@ -469,7 +469,7 @@ foreach ($p in $configPaths) {{
 
 Write-Host ""
 Write-Host "Done! WinNUT-Client installed and configured." -ForegroundColor Green
-Write-Host "Server: $ServerHost:$ServerPort  UPS: $UpsName" -ForegroundColor Cyan
+Write-Host "Server: ${ServerHost}:$ServerPort  UPS: $UpsName" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Press any key to exit..."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
