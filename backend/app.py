@@ -475,7 +475,7 @@ Write-Host "Press any key to exit..."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 """
     from fastapi.responses import PlainTextResponse
-    return PlainTextResponse(script, media_type="text/plain",
+    return PlainTextResponse(script, media_type="application/octet-stream",
         headers={"Content-Disposition": "attachment; filename=winnut-install.ps1"})
 
 
@@ -617,7 +617,7 @@ switch ($choice) {{
 }}
 """
     from fastapi.responses import PlainTextResponse
-    return PlainTextResponse(script, media_type="text/plain",
+    return PlainTextResponse(script, media_type="application/octet-stream",
         headers={"Content-Disposition": "attachment; filename=nut-monitor.ps1"})
 
 
