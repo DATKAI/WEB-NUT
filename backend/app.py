@@ -651,15 +651,20 @@ async def api_clients(request: Request):
             ["ss", "-tnp"],
             capture_output=True, text=True, timeout=5
         )
+        seen = set()
         clients = []
         for line in result.stdout.splitlines():
-            if ":3493" in line and "ESTAB" in line:
-                parts = line.split()
-                # Формат: State Recv-Q Send-Q Local Peer
-                peer = parts[4] if len(parts) > 4 else ""
-                ip = peer.rsplit(":", 1)[0] if ":" in peer else peer
-                if ip and ip not in ("", "0.0.0.0"):
-                    clients.append({"ip": ip, "state": "connected"})
+            if ":3493" not in line or "ESTAB" not in line:
+                continue
+            parts = line.split()
+            peer = parts[4] if len(parts) > 4 else ""
+            ip = peer.rsplit(":", 1)[0] if ":" in peer else peer
+            # Пропускаем localhost — это внутренние соединения NUT драйверов и upsmon
+            if not ip or ip in ("", "0.0.0.0", "127.0.0.1", "::1", "localhost"):
+                continue
+            if ip not in seen:
+                seen.add(ip)
+                clients.append({"ip": ip, "state": "connected"})
         return clients
     except Exception as e:
         return []
