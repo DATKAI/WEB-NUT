@@ -6,180 +6,170 @@
 <title>NUT Monitor</title>
 <style>
 :root {
-  --bg: #0f1117; --card: #1a1d27; --border: #2a2d3e;
-  --text: #e0e0e0; --muted: #6b7280; --accent: #2563eb;
-  --green: #22c55e; --yellow: #f59e0b; --red: #ef4444; --purple: #a78bfa;
+  --bg:#0f1117; --card:#1a1d27; --border:#2a2d3e;
+  --text:#e0e0e0; --muted:#6b7280; --accent:#2563eb;
+  --green:#22c55e; --yellow:#f59e0b; --red:#ef4444; --purple:#a78bfa;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;}
 
 /* Sidebar */
-.sidebar { width: 220px; background: var(--card); border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; flex-shrink: 0; }
-.sidebar-logo { padding: 20px 16px; border-bottom: 1px solid var(--border); }
-.sidebar-logo h1 { font-size: 16px; font-weight: 700; color: #fff; }
-.sidebar-logo p { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.nav { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px;
-  border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--muted);
-  transition: all 0.15s; user-select: none; }
-.nav-item:hover { background: #22263a; color: var(--text); }
-.nav-item.active { background: #1e3a5f; color: #60a5fa; font-weight: 600; }
-.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
-.sidebar-footer { padding: 12px 8px; border-top: 1px solid var(--border); }
-.user-info { padding: 8px 12px; font-size: 12px; color: var(--muted); }
-.btn-logout { width: 100%; padding: 8px; background: transparent; border: 1px solid var(--border);
-  border-radius: 8px; color: var(--muted); cursor: pointer; font-size: 12px; }
-.btn-logout:hover { border-color: var(--red); color: var(--red); }
+.sidebar{width:220px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-logo{padding:20px 16px;border-bottom:1px solid var(--border);}
+.sidebar-logo h1{font-size:16px;font-weight:700;color:#fff;}
+.sidebar-logo p{font-size:11px;color:var(--muted);margin-top:2px;}
+.nav{flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--muted);transition:all .15s;user-select:none;}
+.nav-item:hover{background:#22263a;color:var(--text);}
+.nav-item.active{background:#1e3a5f;color:#60a5fa;font-weight:600;}
+.nav-item .icon{font-size:15px;width:20px;text-align:center;}
+.sidebar-footer{padding:12px 8px;border-top:1px solid var(--border);}
+.user-info{padding:6px 12px;font-size:12px;color:var(--muted);margin-bottom:4px;}
+.btn-logout{width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:12px;}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
 
 /* Main */
-.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.topbar { padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex;
-  align-items: center; justify-content: space-between; background: var(--card); }
-.topbar-title { font-size: 15px; font-weight: 600; }
-.conn-dot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-.dot.off { background: var(--red); }
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
-.dot.live { animation: pulse 2s infinite; }
-
-.content { flex: 1; overflow-y: auto; padding: 24px; }
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--card);}
+.topbar-title{font-size:15px;font-weight:600;}
+.conn-dot{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);}
+.dot.off{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.dot.live{animation:pulse 2s infinite;}
+.content{flex:1;overflow-y:auto;padding:24px;}
 
 /* Pages */
-.page { display: none; }
-.page.active { display: block; }
+.page{display:none;}.page.active{display:block;}
+
+/* Tabs — ИСПРАВЛЕНО */
+.tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);}
+.tab{padding:9px 18px;font-size:13px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap;}
+.tab.active{color:#60a5fa;border-bottom-color:#60a5fa;font-weight:600;}
+.tab:hover{color:var(--text);}
+.tab-pane{display:none;}.tab-pane.active{display:block;}
 
 /* Cards */
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-.card + .card { margin-top: 16px; }
-.section-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase;
-  letter-spacing: 1px; margin-bottom: 16px; }
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
 
-/* UPS Grid */
-.ups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 16px; margin-bottom: 20px; }
-.ups-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-.ups-card.ol { border-left: 4px solid var(--green); }
-.ups-card.ob { border-left: 4px solid var(--yellow); }
-.ups-card.lb { border-left: 4px solid var(--red); }
-.ups-card.unknown { border-left: 4px solid var(--muted); opacity: .6; }
+/* UPS */
+.ups-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:16px;margin-bottom:20px;}
+.ups-card{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--border);border-radius:12px;padding:20px;}
+.ups-card.ol{border-left-color:var(--green);}
+.ups-card.ob{border-left-color:var(--yellow);}
+.ups-card.lb{border-left-color:var(--red);}
+.ups-card.unknown{border-left-color:var(--muted);opacity:.6;}
+.ups-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;}
+.ups-title{font-size:15px;font-weight:600;}
+.ups-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+.badges{display:flex;gap:5px;flex-wrap:wrap;}
+.badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-ol{background:#14532d;color:var(--green);}
+.b-ob{background:#451a03;color:var(--yellow);}
+.b-lb{background:#450a0a;color:var(--red);}
+.b-chrg{background:#1e3a5f;color:#60a5fa;}
+.b-off{background:#1f2937;color:var(--muted);}
+.bar-wrap{margin-bottom:12px;}
+.bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px;}
+.bar-track{background:#2a2d3e;border-radius:6px;height:8px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:6px;transition:width .6s;}
+.bar-green{background:linear-gradient(90deg,#16a34a,#22c55e);}
+.bar-yellow{background:linear-gradient(90deg,#d97706,#f59e0b);}
+.bar-red{background:linear-gradient(90deg,#dc2626,#ef4444);}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.stat{background:#0f1117;border-radius:8px;padding:10px 12px;}
+.stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.stat-v{font-size:17px;font-weight:600;}
+.stat-u{font-size:10px;color:var(--muted);margin-left:2px;}
 
-.ups-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
-.ups-title { font-size: 15px; font-weight: 600; }
-.ups-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
-.badges { display: flex; gap: 6px; flex-wrap: wrap; }
-.badge { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-.b-ol { background: #14532d; color: var(--green); }
-.b-ob { background: #451a03; color: var(--yellow); }
-.b-lb { background: #450a0a; color: var(--red); }
-.b-chrg { background: #1e3a5f; color: #60a5fa; }
-.b-off { background: #1f2937; color: var(--muted); }
-
-.bar-wrap { margin-bottom: 14px; }
-.bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
-.bar-track { background: #2a2d3e; border-radius: 6px; height: 8px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 6px; transition: width .6s; }
-.bar-green { background: linear-gradient(90deg,#16a34a,#22c55e); }
-.bar-yellow { background: linear-gradient(90deg,#d97706,#f59e0b); }
-.bar-red { background: linear-gradient(90deg,#dc2626,#ef4444); }
-
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
-.stat { background: #0f1117; border-radius: 8px; padding: 10px 12px; }
-.stat-l { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
-.stat-v { font-size: 17px; font-weight: 600; }
-.stat-u { font-size: 10px; color: var(--muted); margin-left: 2px; }
-
-.actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.btn { padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer;
-  font-size: 12px; font-weight: 600; transition: opacity .2s; }
-.btn:hover { opacity: .8; }
-.btn-blue { background: var(--accent); color: #fff; }
-.btn-yellow { background: #d97706; color: #fff; }
-.btn-red { background: #dc2626; color: #fff; }
-.btn-gray { background: #374151; color: var(--text); }
-.btn-green { background: #16a34a; color: #fff; }
-.btn-sm { padding: 5px 10px; font-size: 11px; }
-.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-
-/* Chart */
-.chart-wrap { position: relative; height: 160px; margin-top: 12px; }
-canvas { width: 100% !important; }
+/* Buttons */
+.actions{display:flex;gap:6px;flex-wrap:wrap;}
+.btn{padding:7px 14px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:opacity .2s;}
+.btn:hover{opacity:.8;}
+.btn-blue{background:var(--accent);color:#fff;}
+.btn-yellow{background:#d97706;color:#fff;}
+.btn-red{background:#dc2626;color:#fff;}
+.btn-gray{background:#374151;color:var(--text);}
+.btn-green{background:#16a34a;color:#fff;}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
 
 /* Table */
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 11px;
-  text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
-td { padding: 10px 12px; border-bottom: 1px solid #1f2333; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: #1f2333; }
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:8px 12px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid #1f2333;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#1f2333;}
 
 /* Events */
-.ev-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; align-items: flex-start; }
-.ev-row:last-child { border-bottom: none; }
-.ev-ts { color: var(--muted); min-width: 130px; }
-.ev-ups { color: #60a5fa; min-width: 80px; font-weight: 600; }
-.ev-msg { color: #d1d5db; }
+.ev-row{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.ev-row:last-child{border-bottom:none;}
+.ev-ts{color:var(--muted);min-width:130px;white-space:nowrap;}
+.ev-ups{color:#60a5fa;min-width:80px;font-weight:600;}
+.ev-msg{color:#d1d5db;}
 
 /* Forms */
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.form-group { display: flex; flex-direction: column; gap: 5px; }
-.form-group.full { grid-column: 1 / -1; }
-label { font-size: 12px; color: var(--muted); }
-input, select { padding: 9px 12px; background: #0f1117; border: 1px solid var(--border);
-  border-radius: 8px; color: var(--text); font-size: 13px; outline: none; width: 100%; }
-input:focus, select:focus { border-color: var(--accent); }
-select option { background: #1a1d27; }
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:12px;color:var(--muted);}
+input,select,textarea{padding:9px 12px;background:#0f1117;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+select option{background:#1a1d27;}
+textarea{resize:vertical;font-family:monospace;font-size:12px;}
+
+/* Code block */
+.code-block{background:#0f1117;border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-family:'Courier New',monospace;font-size:12px;color:#a5f3fc;white-space:pre-wrap;word-break:break-all;position:relative;}
+.copy-btn{position:absolute;top:8px;right:8px;padding:4px 10px;background:#374151;border:none;border-radius:5px;color:var(--muted);font-size:11px;cursor:pointer;}
+.copy-btn:hover{background:#4b5563;color:#fff;}
 
 /* Modal */
-.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex;
-  align-items: center; justify-content: center; z-index: 100; display: none; }
-.modal-bg.open { display: flex; }
-.modal { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-  padding: 28px; width: 480px; max-width: 95vw; }
-.modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
-.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:20px;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+
+/* Confirm modal */
+.confirm-icon{font-size:40px;text-align:center;margin-bottom:12px;}
+.confirm-msg{font-size:14px;color:var(--text);margin-bottom:8px;}
+.confirm-sub{font-size:12px;color:var(--muted);}
 
 /* Toast */
-.toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 18px;
-  border-radius: 8px; font-size: 13px; font-weight: 500;
-  opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 200; }
-.toast.ok { background: #14532d; color: var(--green); border: 1px solid #16a34a; }
-.toast.err { background: #450a0a; color: var(--red); border: 1px solid #dc2626; }
-.toast.show { opacity: 1; }
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 18px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:200;}
+.toast.ok{background:#14532d;color:var(--green);border:1px solid #16a34a;}
+.toast.err{background:#450a0a;color:var(--red);border:1px solid #dc2626;}
+.toast.show{opacity:1;}
 
-/* NUT Status */
-.svc-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-.svc-row:last-child { border-bottom: none; }
-.svc-dot { width: 8px; height: 8px; border-radius: 50%; }
-.svc-active { background: var(--green); }
-.svc-inactive { background: var(--red); }
+/* NUT services */
+.svc-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.svc-row:last-child{border-bottom:none;}
+.svc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.svc-active{background:var(--green);}
+.svc-inactive{background:var(--red);}
 
-/* Scan result */
-.scan-item { background: #0f1117; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
-.scan-item h4 { font-size: 13px; margin-bottom: 6px; }
-.scan-item p { font-size: 11px; color: var(--muted); }
+/* Client OS tabs */
+.os-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.os-tab{padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;background:#1f2333;color:var(--muted);border:1px solid var(--border);}
+.os-tab.active{background:#1e3a5f;color:#60a5fa;border-color:#2563eb;}
+.os-pane{display:none;}.os-pane.active{display:block;}
+.step{display:flex;gap:12px;margin-bottom:16px;}
+.step-num{width:26px;height:26px;border-radius:50%;background:#1e3a5f;color:#60a5fa;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.step-body{flex:1;}
+.step-title{font-size:13px;font-weight:600;margin-bottom:6px;}
 
-/* Tabs */
-.tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
-.tab { padding: 9px 16px; font-size: 13px; cursor: pointer; color: var(--muted);
-  border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; }
-.tab.active { color: #60a5fa; border-bottom-color: #60a5fa; font-weight: 600; }
-.tab:hover { color: var(--text); }
-.tab-pane { display: none; }
-.tab-pane.active { display: block; }
+/* Scan */
+.scan-item{background:#0f1117;border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.scan-item-info h4{font-size:13px;font-weight:600;}
+.scan-item-info p{font-size:11px;color:var(--muted);margin-top:3px;}
 
-/* Responsive */
-@media (max-width: 768px) {
-  .sidebar { display: none; }
-  .ups-grid { grid-template-columns: 1fr; }
-  .form-grid { grid-template-columns: 1fr; }
-  .stats { grid-template-columns: repeat(2,1fr); }
-}
+@media(max-width:768px){.sidebar{display:none;}.ups-grid{grid-template-columns:1fr;}.form-grid{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}}
 </style>
 </head>
 <body>
 
-<!-- Sidebar -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <h1>⚡ NUT Monitor</h1>
@@ -188,6 +178,7 @@ select option { background: #1a1d27; }
   <nav class="nav">
     <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span>Дашборд</div>
     <div class="nav-item" data-page="devices"><span class="icon">🔌</span>Устройства</div>
+    <div class="nav-item" data-page="clients"><span class="icon">🖥️</span>Клиенты</div>
     <div class="nav-item" data-page="events"><span class="icon">📋</span>События</div>
     <div class="nav-item" data-page="nut"><span class="icon">⚙️</span>NUT Сервер</div>
     <div class="nav-item admin-only" data-page="users"><span class="icon">👥</span>Пользователи</div>
@@ -199,7 +190,6 @@ select option { background: #1a1d27; }
   </div>
 </aside>
 
-<!-- Main -->
 <div class="main">
   <div class="topbar">
     <span class="topbar-title" id="page-title">Дашборд</span>
@@ -226,18 +216,125 @@ select option { background: #1a1d27; }
         <div class="section-title" style="margin:0">Устройства ИБП</div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-gray btn-sm" onclick="scanUps()">🔍 Сканировать USB</button>
-          <button class="btn btn-blue btn-sm admin-only" onclick="openAddUps()">+ Добавить</button>
+          <button class="btn btn-blue btn-sm admin-only" onclick="openModal('modal-add-ups')">+ Добавить вручную</button>
         </div>
       </div>
-      <div class="card">
+      <div class="card" style="margin-bottom:16px">
         <table id="devices-table">
-          <thead><tr><th>Имя</th><th>Модель</th><th>Статус</th><th>Включён</th><th>Действия</th></tr></thead>
+          <thead><tr><th>Имя</th><th>Описание</th><th>Драйвер / ID</th><th>Вкл</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
-      <div id="scan-results" style="margin-top:16px;display:none">
-        <div class="section-title">Найдены устройства</div>
+      <div id="scan-results" style="display:none">
+        <div class="section-title">Найдены USB устройства</div>
         <div id="scan-list"></div>
+      </div>
+    </div>
+
+    <!-- CLIENTS -->
+    <div class="page" id="page-clients">
+      <div class="card" style="margin-bottom:16px">
+        <div class="section-title">Данные для подключения клиентов</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px">
+          <div class="stat"><div class="stat-l">IP сервера</div><div style="font-size:14px;font-weight:600;font-family:monospace" id="client-ip">—</div></div>
+          <div class="stat"><div class="stat-l">Порт</div><div style="font-size:14px;font-weight:600;font-family:monospace">3493</div></div>
+          <div class="stat"><div class="stat-l">Логин клиента</div><div style="font-size:14px;font-weight:600;font-family:monospace">upslave</div></div>
+          <div class="stat"><div class="stat-l">Пароль клиента</div><div style="font-size:14px;font-weight:600;font-family:monospace" id="client-pass">••••••• <button class="btn btn-gray btn-sm" onclick="togglePass()">👁</button></div></div>
+        </div>
+        <div style="margin-bottom:8px">
+          <label style="font-size:12px;color:var(--muted)">UPS для мониторинга</label>
+          <select id="client-ups-select" style="max-width:200px;margin-top:4px" onchange="updateClientCmds()">
+            <option value="ippon">ippon</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="os-tabs">
+        <div class="os-tab active" onclick="switchOs('linux',this)">🐧 Linux</div>
+        <div class="os-tab" onclick="switchOs('windows',this)">🪟 Windows</div>
+      </div>
+
+      <!-- Linux -->
+      <div class="os-pane active" id="os-linux">
+        <div class="card">
+          <div class="section-title">Настройка на Linux (Debian / Ubuntu)</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Установить пакет</div>
+              <div class="code-block" id="cmd-linux-install">apt install -y nut-client<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Создать /etc/nut/nut.conf</div>
+              <div class="code-block">echo "MODE=netclient" > /etc/nut/nut.conf<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">Создать /etc/nut/upsmon.conf</div>
+              <div class="code-block" id="cmd-linux-upsmon">загрузка...<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <div class="step-title">Включить и запустить</div>
+              <div class="code-block">systemctl enable --now nut-client<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <div class="step-title">Проверить связь с сервером</div>
+              <div class="code-block" id="cmd-linux-check">загрузка...<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Windows -->
+      <div class="os-pane" id="os-windows">
+        <div class="card" style="margin-bottom:16px">
+          <div class="section-title">Вариант 1 — WinNUT-Client (рекомендуется)</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Скачать WinNUT-Client</div>
+              <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Скачай последний релиз с GitHub:</p>
+              <div class="code-block">https://github.com/nutdotnet/WinNUT-Client/releases<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Настроить подключение</div>
+              <table style="font-size:13px;margin-top:4px">
+                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Server Host</td><td id="win-host" style="font-family:monospace">—</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Port</td><td style="font-family:monospace">3493</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">UPS Name</td><td id="win-ups" style="font-family:monospace">ippon</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Login</td><td style="font-family:monospace">upslave</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Password</td><td id="win-pass" style="font-family:monospace">•••••••</td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">Установить как службу Windows</div>
+              <p style="font-size:12px;color:var(--muted)">В настройках WinNUT-Client включи «Run as Windows Service» — это обеспечит shutdown даже без входа пользователя.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">Вариант 2 — PowerShell скрипт (мониторинг и shutdown)</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Альтернатива если WinNUT-Client не подходит. Скрипт опрашивает NUT сервер и выключает ПК при OB+LB.</p>
+          <div class="code-block" id="cmd-win-ps" style="max-height:220px;overflow-y:auto">загрузка...<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+          <p style="font-size:11px;color:var(--muted);margin-top:8px">Запуск: сохрани как <code>nut-monitor.ps1</code>, добавь в Планировщик задач при старте системы.</p>
+        </div>
       </div>
     </div>
 
@@ -245,21 +342,20 @@ select option { background: #1a1d27; }
     <div class="page" id="page-events">
       <div class="card">
         <div class="section-title">Журнал событий</div>
-        <div id="events-list"></div>
+        <div id="events-list"><div style="color:var(--muted);font-size:13px">Нет событий</div></div>
       </div>
     </div>
 
-    <!-- NUT SERVER -->
+    <!-- NUT SERVER — вкладки исправлены -->
     <div class="page" id="page-nut">
-      <div class="tabs">
+      <div class="tabs" data-group="nut">
         <div class="tab active" data-tab="nut-status">Статус</div>
         <div class="tab admin-only" data-tab="nut-config">Конфигурация</div>
         <div class="tab admin-only" data-tab="nut-users">NUT Пользователи</div>
       </div>
-
       <div class="tab-pane active" id="tab-nut-status">
-        <div class="card" style="margin-bottom:16px">
-          <div class="section-title">Сервисы</div>
+        <div class="card">
+          <div class="section-title">Сервисы NUT</div>
           <div id="nut-services"></div>
           <div style="margin-top:16px;display:flex;gap:8px">
             <button class="btn btn-blue btn-sm admin-only" onclick="restartNut()">🔄 Перезапустить NUT</button>
@@ -267,46 +363,30 @@ select option { background: #1a1d27; }
           </div>
         </div>
       </div>
-
       <div class="tab-pane" id="tab-nut-config">
         <div class="card">
           <div class="section-title">Настройки NUT сервера</div>
-          <div class="form-grid" style="max-width:500px">
-            <div class="form-group">
-              <label>NUT admin логин</label>
-              <input id="nut_admin_user" placeholder="admin">
-            </div>
-            <div class="form-group">
-              <label>NUT admin пароль</label>
-              <input id="nut_admin_pass" type="password" placeholder="••••••••">
-            </div>
-            <div class="form-group">
-              <label>Порог низкого заряда (%)</label>
-              <input id="low_batt_threshold" type="number" placeholder="30">
-            </div>
-            <div class="form-group">
-              <label>Задержка shutdown (сек)</label>
-              <input id="shutdown_delay" type="number" placeholder="60">
-            </div>
-            <div class="form-group">
-              <label>Интервал опроса (сек)</label>
-              <input id="poll_interval" type="number" placeholder="3">
-            </div>
+          <div class="form-grid" style="max-width:520px">
+            <div class="form-group"><label>NUT admin логин</label><input id="nut_admin_user" placeholder="admin"></div>
+            <div class="form-group"><label>NUT admin пароль</label><input id="nut_admin_pass" type="password" placeholder="••••••••"></div>
+            <div class="form-group"><label>Порог низкого заряда (%)</label><input id="low_batt_threshold" type="number" placeholder="30"></div>
+            <div class="form-group"><label>Задержка shutdown (сек)</label><input id="shutdown_delay" type="number" placeholder="60"></div>
+            <div class="form-group"><label>Интервал опроса (сек)</label><input id="poll_interval" type="number" placeholder="3"></div>
           </div>
-          <div style="margin-top:16px">
-            <button class="btn btn-blue" onclick="saveNutSettings()">Сохранить</button>
-          </div>
+          <div style="margin-top:16px"><button class="btn btn-blue" onclick="saveNutSettings()">Сохранить</button></div>
         </div>
       </div>
-
       <div class="tab-pane" id="tab-nut-users">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div class="section-title" style="margin:0">NUT пользователи (upsd.users)</div>
-          <button class="btn btn-blue btn-sm" onclick="openAddNutUser()">+ Добавить</button>
+          <button class="btn btn-blue btn-sm" onclick="openModal('modal-add-nut-user')">+ Добавить</button>
         </div>
         <div class="card">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+            Пользователи для подключения клиентов к NUT серверу. <b style="color:var(--text)">slave</b> — для клиентских серверов (Linux/Windows). <b style="color:var(--text)">master</b> — только для этого сервера.
+          </p>
           <table id="nut-users-table">
-            <thead><tr><th>Логин</th><th>Роль</th><th>Права</th><th></th></tr></thead>
+            <thead><tr><th>Логин</th><th>Роль</th><th>Actions / Instcmds</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -316,10 +396,14 @@ select option { background: #1a1d27; }
     <!-- USERS -->
     <div class="page" id="page-users">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div class="section-title" style="margin:0">Пользователи панели</div>
-        <button class="btn btn-blue btn-sm" onclick="openAddUser()">+ Добавить</button>
+        <div class="section-title" style="margin:0">Пользователи веб-панели</div>
+        <button class="btn btn-blue btn-sm" onclick="openModal('modal-add-user')">+ Добавить</button>
       </div>
       <div class="card">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+          <b style="color:var(--text)">admin</b> — полный доступ, может изменять настройки.<br>
+          <b style="color:var(--text)">viewer</b> — только просмотр дашборда и событий.
+        </p>
         <table id="users-table">
           <thead><tr><th>Логин</th><th>Роль</th><th>Создан</th><th></th></tr></thead>
           <tbody></tbody>
@@ -329,76 +413,53 @@ select option { background: #1a1d27; }
 
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
-      <div class="tabs">
+      <div class="tabs" data-group="settings">
         <div class="tab active" data-tab="s-tg">Telegram</div>
         <div class="tab" data-tab="s-email">Email / SMTP</div>
         <div class="tab" data-tab="s-notify">Правила</div>
       </div>
-
       <div class="tab-pane active" id="tab-s-tg">
         <div class="card">
           <div class="section-title">Telegram уведомления</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Создай бота через <b>@BotFather</b>, получи токен. Chat ID можно узнать через <b>@userinfobot</b>.</p>
           <div class="form-grid" style="max-width:500px">
-            <div class="form-group full">
-              <label>Bot Token</label>
-              <input id="tg_token" placeholder="123456789:AAF...">
-            </div>
-            <div class="form-group full">
-              <label>Chat ID</label>
-              <input id="tg_chat_id" placeholder="-100123456789">
-            </div>
+            <div class="form-group full"><label>Bot Token</label><input id="tg_token" placeholder="123456789:AAFxxxxxxxx"></div>
+            <div class="form-group full"><label>Chat ID (личный или группы)</label><input id="tg_chat_id" placeholder="-100123456789"></div>
           </div>
           <div style="margin-top:16px;display:flex;gap:8px">
             <button class="btn btn-blue" onclick="saveSettings(['tg_token','tg_chat_id'])">Сохранить</button>
-            <button class="btn btn-gray" onclick="testTg()">📨 Тест</button>
+            <button class="btn btn-gray" onclick="testTg()">📨 Отправить тест</button>
           </div>
         </div>
       </div>
-
       <div class="tab-pane" id="tab-s-email">
         <div class="card">
           <div class="section-title">Email / SMTP</div>
           <div class="form-grid" style="max-width:500px">
-            <div class="form-group">
-              <label>SMTP сервер</label>
-              <input id="smtp_host" placeholder="smtp.gmail.com">
-            </div>
-            <div class="form-group">
-              <label>Порт</label>
-              <input id="smtp_port" placeholder="587" type="number">
-            </div>
-            <div class="form-group">
-              <label>Логин</label>
-              <input id="smtp_user" placeholder="you@gmail.com">
-            </div>
-            <div class="form-group">
-              <label>Пароль</label>
-              <input id="smtp_password" type="password" placeholder="••••••••">
-            </div>
-            <div class="form-group full">
-              <label>Получатель (To)</label>
-              <input id="smtp_to" placeholder="admin@company.com">
-            </div>
+            <div class="form-group"><label>SMTP сервер</label><input id="smtp_host" placeholder="smtp.gmail.com"></div>
+            <div class="form-group"><label>Порт</label><input id="smtp_port" placeholder="587" type="number"></div>
+            <div class="form-group"><label>Логин</label><input id="smtp_user" placeholder="you@gmail.com"></div>
+            <div class="form-group"><label>Пароль / App Password</label><input id="smtp_password" type="password" placeholder="••••••••"></div>
+            <div class="form-group full"><label>Получатель (To)</label><input id="smtp_to" placeholder="admin@company.com"></div>
           </div>
           <div style="margin-top:16px;display:flex;gap:8px">
             <button class="btn btn-blue" onclick="saveSettings(['smtp_host','smtp_port','smtp_user','smtp_password','smtp_to'])">Сохранить</button>
-            <button class="btn btn-gray" onclick="testEmail()">📧 Тест</button>
+            <button class="btn btn-gray" onclick="testEmail()">📧 Отправить тест</button>
           </div>
         </div>
       </div>
-
       <div class="tab-pane" id="tab-s-notify">
         <div class="card">
           <div class="section-title">Правила уведомлений</div>
           <div style="display:flex;flex-direction:column;gap:14px;max-width:400px">
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
-              <input type="checkbox" id="notify_onbatt"> Переход на батарею (OB)
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="notify_onbatt"> Переход на батарею (OB) — питание пропало
             </label>
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
-              <input type="checkbox" id="notify_lowbatt"> Низкий заряд (LB)
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="notify_lowbatt"> Низкий заряд (LB) — скоро shutdown
             </label>
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
-              <input type="checkbox" id="notify_online"> Восстановление питания (OL)
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="notify_online"> Питание восстановлено (OL)
             </label>
           </div>
           <div style="margin-top:16px">
@@ -416,14 +477,18 @@ select option { background: #1a1d27; }
   <div class="modal">
     <h3>Добавить ИБП</h3>
     <div class="form-grid">
-      <div class="form-group"><label>Имя (латиница)</label><input id="add-ups-name" placeholder="ippon"></div>
-      <div class="form-group"><label>Описание</label><input id="add-ups-desc" placeholder="Ippon 2000VA"></div>
+      <div class="form-group"><label>Имя (латиница, без пробелов)</label><input id="add-ups-name" placeholder="ippon"></div>
+      <div class="form-group"><label>Описание</label><input id="add-ups-desc" placeholder="Ippon Innova G2 2000VA"></div>
       <div class="form-group"><label>Vendor ID</label><input id="add-ups-vendor" placeholder="06DA"></div>
       <div class="form-group"><label>Product ID</label><input id="add-ups-product" placeholder="FFFF"></div>
-      <div class="form-group full"><label>Серийный номер</label><input id="add-ups-serial" placeholder="N06E10F4200076"></div>
+      <div class="form-group full"><label>Серийный номер (для различения одинаковых моделей)</label><input id="add-ups-serial" placeholder="N06E10F4200076"></div>
       <div class="form-group"><label>Драйвер</label>
         <select id="add-ups-driver">
-          <option>usbhid-ups</option><option>blazer_ser</option><option>megatec</option><option>apcsmart</option>
+          <option value="usbhid-ups">usbhid-ups (USB HID)</option>
+          <option value="blazer_ser">blazer_ser (RS-232)</option>
+          <option value="megatec">megatec (RS-232)</option>
+          <option value="apcsmart">apcsmart (APC SmartUPS)</option>
+          <option value="nutdrv_qx">nutdrv_qx (Q1/Megatec USB)</option>
         </select>
       </div>
       <div class="form-group"><label>Порт</label><input id="add-ups-port" value="auto"></div>
@@ -442,7 +507,10 @@ select option { background: #1a1d27; }
       <div class="form-group"><label>Логин</label><input id="add-user-name"></div>
       <div class="form-group"><label>Пароль</label><input id="add-user-pass" type="password"></div>
       <div class="form-group full"><label>Роль</label>
-        <select id="add-user-role"><option value="viewer">Viewer (только просмотр)</option><option value="admin">Admin (полный доступ)</option></select>
+        <select id="add-user-role">
+          <option value="viewer">Viewer — только просмотр дашборда</option>
+          <option value="admin">Admin — полный доступ к настройкам</option>
+        </select>
       </div>
     </div>
     <div class="modal-footer">
@@ -455,14 +523,18 @@ select option { background: #1a1d27; }
 <div class="modal-bg" id="modal-add-nut-user">
   <div class="modal">
     <h3>Добавить NUT пользователя</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Этот пользователь будет прописан в <code>/etc/nut/upsd.users</code> и используется клиентами для подключения к NUT серверу.</p>
     <div class="form-grid">
-      <div class="form-group"><label>Логин</label><input id="add-nu-name"></div>
+      <div class="form-group"><label>Логин</label><input id="add-nu-name" placeholder="upslave2"></div>
       <div class="form-group"><label>Пароль</label><input id="add-nu-pass" type="password"></div>
       <div class="form-group full"><label>Роль</label>
-        <select id="add-nu-role"><option value="slave">slave (клиент)</option><option value="master">master</option></select>
+        <select id="add-nu-role">
+          <option value="slave">slave — для клиентских серверов (Linux/Windows)</option>
+          <option value="master">master — для мастер-демона на этом сервере</option>
+        </select>
       </div>
-      <div class="form-group"><label>Actions</label><input id="add-nu-actions" placeholder="SET"></div>
-      <div class="form-group"><label>Instcmds</label><input id="add-nu-instcmds" placeholder="ALL"></div>
+      <div class="form-group"><label>Actions (только для admin)</label><input id="add-nu-actions" placeholder="SET"></div>
+      <div class="form-group"><label>Instcmds (только для admin)</label><input id="add-nu-instcmds" placeholder="ALL"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-gray" onclick="closeModal('modal-add-nut-user')">Отмена</button>
@@ -474,9 +546,23 @@ select option { background: #1a1d27; }
 <div class="modal-bg" id="modal-commands">
   <div class="modal">
     <h3 id="modal-cmd-title">Команды UPS</h3>
-    <div id="modal-cmd-list" style="max-height:300px;overflow-y:auto"></div>
+    <div id="modal-cmd-list" style="max-height:340px;overflow-y:auto"></div>
     <div class="modal-footer">
       <button class="btn btn-gray" onclick="closeModal('modal-commands')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal-bg" id="modal-confirm">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <h3 id="confirm-title">Подтверждение</h3>
+    <p class="confirm-msg" id="confirm-msg"></p>
+    <p class="confirm-sub" id="confirm-sub"></p>
+    <div class="modal-footer" style="justify-content:center">
+      <button class="btn btn-gray" onclick="closeModal('modal-confirm')">Отмена</button>
+      <button class="btn btn-red" id="confirm-ok-btn" onclick="confirmAction()">Выполнить</button>
     </div>
   </div>
 </div>
@@ -486,8 +572,11 @@ select option { background: #1a1d27; }
 <script>
 let currentRole = 'viewer';
 let currentUpsData = {};
+let serverIp = location.hostname;
+let slavePass = '•••••••';
+let slavePassVisible = false;
+let pendingAction = null;
 let ws = null;
-let charts = {};
 
 // ─── Init ───
 async function init() {
@@ -498,13 +587,16 @@ async function init() {
     if (r.role !== 'admin') {
       document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
     }
-    loadSettings();
-    connectWs();
+    if (r.role === 'admin') {
+      loadSettings();
+      loadNutUsers();
+      loadUsers();
+    }
     loadDevicesTable();
-    loadNutUsers();
-    loadUsers();
     loadNutServices();
     loadEvents();
+    connectWs();
+    updateClientInfo();
   } catch {
     location.href = '/login';
   }
@@ -522,20 +614,33 @@ document.querySelectorAll('.nav-item').forEach(item => {
     if (page === 'events') loadEvents();
     if (page === 'nut') loadNutServices();
     if (page === 'devices') loadDevicesTable();
-    if (page === 'users') loadUsers();
+    if (page === 'clients') updateClientCmds();
   });
 });
 
+// ─── Tab switching (ИСПРАВЛЕНО) ───
 document.querySelectorAll('.tabs .tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    const container = tab.closest('.page, .main');
-    tab.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const tabsEl = tab.closest('.tabs');
+    const parent = tabsEl.parentElement;
+    // Деактивируем все вкладки в этой группе
+    tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-    const id = tab.dataset.tab;
-    tab.closest('.card, .page, div').parentElement.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + id).classList.add('active');
+    // Скрываем все tab-pane прямые дети родителя
+    parent.querySelectorAll(':scope > .tab-pane').forEach(p => p.classList.remove('active'));
+    // Показываем нужный
+    const target = document.getElementById('tab-' + tab.dataset.tab);
+    if (target) target.classList.add('active');
   });
 });
+
+// ─── OS tabs ───
+function switchOs(os, el) {
+  document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.os-pane').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('os-' + os).classList.add('active');
+}
 
 // ─── WebSocket ───
 function connectWs() {
@@ -546,7 +651,7 @@ function connectWs() {
   };
   ws.onmessage = e => {
     const data = JSON.parse(e.data);
-    if (data.ups) { currentUpsData = data.ups; renderDashboard(data.ups); }
+    if (data.ups) { currentUpsData = data.ups; renderDashboard(data.ups); checkPushNotify(data.ups); }
     if (data.events) renderDashEvents(data.events);
     if (data.nut_status) renderNutStatus(data.nut_status);
   };
@@ -561,37 +666,34 @@ function connectWs() {
 // ─── Dashboard ───
 function renderDashboard(ups) {
   const grid = document.getElementById('ups-grid');
-  const existing = {};
-  grid.querySelectorAll('[data-ups]').forEach(el => existing[el.dataset.ups] = el);
-
+  const names = Object.keys(ups);
+  // Удалить карточки которых больше нет
+  grid.querySelectorAll('[data-ups]').forEach(el => {
+    if (!names.includes(el.dataset.ups)) el.remove();
+  });
   for (const [name, info] of Object.entries(ups)) {
+    let card = grid.querySelector(`[data-ups="${name}"]`);
     const cls = cardClass(info.status);
-    const pct = info.charge ?? 0;
-
-    if (!existing[name]) {
-      const card = document.createElement('div');
-      card.className = `ups-card ${cls}`;
+    if (!card) {
+      card = document.createElement('div');
       card.dataset.ups = name;
-      card.innerHTML = upsCardHtml(name, info, pct, cls);
       grid.appendChild(card);
-    } else {
-      const card = existing[name];
-      card.className = `ups-card ${cls}`;
-      card.innerHTML = upsCardHtml(name, info, pct, cls);
     }
+    card.className = `ups-card ${cls}`;
+    card.innerHTML = upsCardHtml(name, info);
   }
 }
 
-function upsCardHtml(name, info, pct, cls) {
+function upsCardHtml(name, info) {
+  const pct = info.charge ?? 0;
+  const lpct = info.load ?? 0;
   const barCls = pct >= 60 ? 'bar-green' : pct >= 30 ? 'bar-yellow' : 'bar-red';
-  const loadPct = info.load ?? 0;
-  const loadBar = loadPct >= 80 ? 'bar-red' : loadPct >= 60 ? 'bar-yellow' : 'bar-green';
-
+  const loadBar = lpct >= 80 ? 'bar-red' : lpct >= 60 ? 'bar-yellow' : 'bar-green';
   return `
     <div class="ups-head">
       <div>
         <div class="ups-title">${info.mfr || ''} ${info.model || name}</div>
-        <div class="ups-sub">${name} · ${info.serial || ''}</div>
+        <div class="ups-sub">${name}${info.serial ? ' · ' + info.serial : ''}</div>
       </div>
       <div class="badges">${statusBadges(info.status)}</div>
     </div>
@@ -601,21 +703,21 @@ function upsCardHtml(name, info, pct, cls) {
     </div>
     <div class="bar-wrap">
       <div class="bar-label"><span>Нагрузка</span><span>${info.load ?? '?'}%</span></div>
-      <div class="bar-track"><div class="bar-fill ${loadBar}" style="width:${loadPct}%"></div></div>
+      <div class="bar-track"><div class="bar-fill ${loadBar}" style="width:${lpct}%"></div></div>
     </div>
     <div class="stats">
       <div class="stat"><div class="stat-l">Вход</div><div class="stat-v">${info.input_voltage ?? '?'}<span class="stat-u">V</span></div></div>
       <div class="stat"><div class="stat-l">Выход</div><div class="stat-v">${info.output_voltage ?? '?'}<span class="stat-u">V</span></div></div>
       <div class="stat"><div class="stat-l">Частота</div><div class="stat-v">${info.input_freq ?? '?'}<span class="stat-u">Hz</span></div></div>
       <div class="stat"><div class="stat-l">Запас хода</div><div class="stat-v" style="color:var(--purple)">${fmtRuntime(info.runtime)}</div></div>
-      ${info.temperature ? `<div class="stat"><div class="stat-l">Темп. АКБ</div><div class="stat-v">${info.temperature}<span class="stat-u">°C</span></div></div>` : `<div class="stat"><div class="stat-l">АКБ напр.</div><div class="stat-v">${info.battery_voltage ?? '?'}<span class="stat-u">V</span></div></div>`}
-      <div class="stat"><div class="stat-l">Беeper</div><div class="stat-v" style="font-size:13px">${info.beeper || '—'}</div></div>
+      <div class="stat"><div class="stat-l">${info.temperature != null ? 'Темп. АКБ' : 'АКБ напр.'}</div><div class="stat-v">${info.temperature ?? info.battery_voltage ?? '?'}<span class="stat-u">${info.temperature != null ? '°C' : 'V'}</span></div></div>
+      <div class="stat"><div class="stat-l">Beeper</div><div class="stat-v" style="font-size:12px">${info.beeper || '—'}</div></div>
     </div>
     <div class="actions">
-      <button class="btn btn-blue btn-sm" onclick="sendCmd('${name}','test.battery.start')">▶ Тест</button>
-      <button class="btn btn-gray btn-sm" onclick="sendCmd('${name}','test.battery.stop')">■ Стоп</button>
-      <button class="btn btn-yellow btn-sm" onclick="sendCmd('${name}','beeper.toggle')">🔔</button>
-      <button class="btn btn-outline btn-sm" onclick="openCommands('${name}')">Все команды</button>
+      <button class="btn btn-blue btn-sm" onclick="sendCmd('${name}','test.battery.start')" title="Запустить кратковременный тест батареи">▶ Тест батареи</button>
+      <button class="btn btn-gray btn-sm" onclick="sendCmd('${name}','test.battery.stop')" title="Остановить тест батареи (НЕ выключает ИБП)">■ Стоп тест</button>
+      <button class="btn btn-yellow btn-sm" onclick="sendCmd('${name}','beeper.toggle')" title="Включить/выключить звуковой сигнал">🔔 Звук</button>
+      <button class="btn btn-outline btn-sm" onclick="openCommands('${name}')">Все команды...</button>
     </div>`;
 }
 
@@ -629,33 +731,48 @@ function renderDashEvents(events) {
 
 // ─── Devices ───
 async function loadDevicesTable() {
-  const devices = await api('/api/ups/all');
+  const devices = await api('/api/ups/all').catch(() => []);
   const tbody = document.querySelector('#devices-table tbody');
+  if (!devices.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Нет устройств. Нажмите «Сканировать USB»</td></tr>';
+    return;
+  }
   tbody.innerHTML = devices.map(d => `
     <tr>
       <td><b>${d.name}</b></td>
       <td>${d.description || '—'}</td>
-      <td><code style="font-size:11px">${d.driver} / ${d.vendorid}:${d.productid}</code></td>
-      <td>
-        <input type="checkbox" ${d.enabled ? 'checked' : ''} onchange="toggleUps('${d.name}',this.checked)" ${currentRole!=='admin'?'disabled':''}>
-      </td>
-      <td>${currentRole==='admin' ? `<button class="btn btn-red btn-sm" onclick="deleteUps('${d.name}')">Удалить</button>` : ''}</td>
+      <td><code style="font-size:11px">${d.driver} · ${d.vendorid || '?'}:${d.productid || '?'}</code></td>
+      <td><input type="checkbox" ${d.enabled ? 'checked' : ''} onchange="toggleUps('${d.name}',this.checked)" ${currentRole!=='admin'?'disabled':''}></td>
+      <td>${currentRole==='admin' ? `<button class="btn btn-red btn-sm" onclick="confirmDanger('Удалить ИБП ${d.name}?','Устройство будет удалено из панели. NUT конфиг обновится автоматически.','🔌',()=>deleteUps('${d.name}'))">Удалить</button>` : ''}</td>
     </tr>
   `).join('');
+  // Обновить список в клиентской странице
+  updateUpsSelect(devices);
+}
+
+function updateUpsSelect(devices) {
+  const sel = document.getElementById('client-ups-select');
+  const enabled = devices.filter(d => d.enabled);
+  sel.innerHTML = enabled.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
+  updateClientCmds();
 }
 
 async function scanUps() {
   toast('Сканирование USB...', 'ok');
-  const results = await api('/api/ups/scan');
-  const wrap = document.getElementById('scan-results');
+  const results = await api('/api/ups/scan').catch(() => []);
+  document.getElementById('scan-results').style.display = 'block';
   const list = document.getElementById('scan-list');
-  wrap.style.display = 'block';
-  if (!results.length) { list.innerHTML = '<div style="color:var(--muted);font-size:13px">Устройства не найдены</div>'; return; }
-  list.innerHTML = results.map((d,i) => `
+  if (!results.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0">Устройства не найдены. Проверь подключение USB.</div>';
+    return;
+  }
+  list.innerHTML = results.map((d, i) => `
     <div class="scan-item">
-      <h4>${d.vendor || ''} ${d.product || 'HID UPS'}</h4>
-      <p>Vendor: ${d.vendorid} · Product: ${d.productid} · Serial: ${d.serial || '—'} · Bus: ${d.bus || '—'}</p>
-      ${currentRole==='admin' ? `<button class="btn btn-green btn-sm" style="margin-top:8px" onclick="prefillUps(${i})">+ Добавить</button>` : ''}
+      <div class="scan-item-info">
+        <h4>${d.vendor || 'Неизвестный производитель'} — ${d.product || 'HID UPS'}</h4>
+        <p>Vendor: ${d.vendorid} · Product: ${d.productid} · Serial: ${d.serial || '—'} · Bus: ${d.bus || '—'}</p>
+      </div>
+      ${currentRole==='admin' ? `<button class="btn btn-green btn-sm" onclick="prefillUps(${i})">+ Добавить</button>` : ''}
     </div>
   `).join('');
   window._scanResults = results;
@@ -666,17 +783,17 @@ function prefillUps(i) {
   document.getElementById('add-ups-vendor').value = d.vendorid || '';
   document.getElementById('add-ups-product').value = d.productid || '';
   document.getElementById('add-ups-serial').value = d.serial || '';
-  document.getElementById('add-ups-desc').value = (d.vendor || '') + ' ' + (d.product || '');
+  document.getElementById('add-ups-desc').value = ((d.vendor || '') + ' ' + (d.product || '')).trim();
   openModal('modal-add-ups');
 }
 
-function openAddUps() { openModal('modal-add-ups'); }
-
 async function addUps() {
+  const name = v('add-ups-name');
+  if (!name) { toast('Введите имя устройства', 'err'); return; }
   await api('/api/ups/add', 'POST', {
-    name: v('add-ups-name'), description: v('add-ups-desc'),
-    vendorid: v('add-ups-vendor'), productid: v('add-ups-product'),
-    serial: v('add-ups-serial'), driver: v('add-ups-driver'), port: v('add-ups-port'),
+    name, description: v('add-ups-desc'), vendorid: v('add-ups-vendor'),
+    productid: v('add-ups-product'), serial: v('add-ups-serial'),
+    driver: v('add-ups-driver'), port: v('add-ups-port'),
   });
   closeModal('modal-add-ups');
   toast('ИБП добавлен', 'ok');
@@ -684,7 +801,6 @@ async function addUps() {
 }
 
 async function deleteUps(name) {
-  if (!confirm(`Удалить ${name}?`)) return;
   await api(`/api/ups/${name}`, 'DELETE');
   toast('Удалено', 'ok');
   loadDevicesTable();
@@ -695,31 +811,178 @@ async function toggleUps(name, enabled) {
 }
 
 // ─── Commands ───
+const DANGEROUS_CMDS = {
+  'load.off': { label: 'Отключить нагрузку', icon: '⚡', warn: 'Немедленно отключит питание от всех устройств, подключённых к ИБП!' },
+  'load.on': { label: 'Включить нагрузку', icon: '🔌', warn: 'Подаст питание на нагрузку.' },
+  'shutdown.return': { label: 'Shutdown с возвратом', icon: '🔴', warn: 'Выключит ИБП, затем включит при восстановлении питания.' },
+  'shutdown.stayoff': { label: 'Выключить ИБП', icon: '🔴', warn: 'Полностью выключит ИБП. Все подключённые устройства потеряют питание!' },
+};
+
+const CMD_LABELS = {
+  'test.battery.start': '▶ Запустить тест батареи',
+  'test.battery.stop': '■ Остановить тест батареи',
+  'test.battery.start.quick': '▶ Быстрый тест батареи',
+  'beeper.toggle': '🔔 Переключить звук',
+  'beeper.enable': '🔔 Включить звук',
+  'beeper.disable': '🔕 Выключить звук',
+  'load.off': '⚡ Отключить нагрузку',
+  'load.on': '🔌 Включить нагрузку',
+  'shutdown.return': '🔴 Shutdown с возвратом',
+  'shutdown.stayoff': '🔴 Выключить ИБП',
+};
+
 async function openCommands(upsName) {
   document.getElementById('modal-cmd-title').textContent = `Команды: ${upsName}`;
-  document.getElementById('modal-cmd-list').innerHTML = '<div style="color:var(--muted)">Загрузка...</div>';
+  document.getElementById('modal-cmd-list').innerHTML = '<div style="color:var(--muted);padding:12px 0">Загрузка...</div>';
   openModal('modal-commands');
-  const cmds = await api(`/api/ups/${upsName}/commands`);
+  const cmds = await api(`/api/ups/${upsName}/commands`).catch(() => []);
   if (!cmds.length) {
-    document.getElementById('modal-cmd-list').innerHTML = '<div style="color:var(--muted)">Нет доступных команд</div>';
+    document.getElementById('modal-cmd-list').innerHTML = '<div style="color:var(--muted)">Нет доступных команд или недостаточно прав</div>';
     return;
   }
-  document.getElementById('modal-cmd-list').innerHTML = cmds.map(c => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-      <div><div style="font-size:13px;font-weight:600">${c.name}</div><div style="font-size:11px;color:var(--muted)">${c.desc}</div></div>
-      <button class="btn btn-blue btn-sm" onclick="sendCmd('${upsName}','${c.name}')">▶</button>
-    </div>
-  `).join('');
+  document.getElementById('modal-cmd-list').innerHTML = cmds.map(c => {
+    const isDangerous = c.name in DANGEROUS_CMDS;
+    const label = CMD_LABELS[c.name] || c.name;
+    const btnCls = isDangerous ? 'btn-red' : 'btn-blue';
+    const dangerInfo = isDangerous ? `<div style="font-size:11px;color:var(--red);margin-top:3px">⚠️ ${DANGEROUS_CMDS[c.name].warn}</div>` : '';
+    return `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:12px">
+        <div>
+          <div style="font-size:13px;font-weight:600">${label}</div>
+          <div style="font-size:11px;color:var(--muted)">${c.desc}</div>
+          ${dangerInfo}
+        </div>
+        <button class="btn ${btnCls} btn-sm" style="flex-shrink:0"
+          onclick="${isDangerous
+            ? `confirmDanger('${DANGEROUS_CMDS[c.name].label}','${DANGEROUS_CMDS[c.name].warn}','${DANGEROUS_CMDS[c.name].icon}',()=>sendCmdDirect('${upsName}','${c.name}'))`
+            : `sendCmd('${upsName}','${c.name}')`
+          }">▶</button>
+      </div>`;
+  }).join('');
 }
 
 async function sendCmd(ups, cmd) {
-  const r = await api(`/api/ups/${ups}/command/${cmd}`, 'POST');
-  toast(r.result || r.error || 'Команда отправлена', r.ok ? 'ok' : 'err');
+  const r = await api(`/api/ups/${ups}/command/${cmd}`, 'POST').catch(e => ({ ok: false, error: e.message }));
+  toast(r.result || r.error || 'Выполнено', r.ok ? 'ok' : 'err');
+}
+
+async function sendCmdDirect(ups, cmd) {
+  closeModal('modal-commands');
+  closeModal('modal-confirm');
+  const r = await api(`/api/ups/${ups}/command/${cmd}`, 'POST').catch(e => ({ ok: false, error: e.message }));
+  toast(r.result || r.error || 'Выполнено', r.ok ? 'ok' : 'err');
+}
+
+// ─── Clients page ───
+async function updateClientInfo() {
+  document.getElementById('client-ip').textContent = serverIp;
+  document.getElementById('win-host').textContent = serverIp;
+  if (currentRole === 'admin') {
+    const s = await api('/api/settings').catch(() => ({}));
+    // Пароль slave берём из NUT users
+    const nutUsers = await api('/api/nut-users').catch(() => []);
+    const slave = nutUsers.find(u => u.role === 'slave');
+    if (slave) {
+      slavePass = slave.password;
+      document.getElementById('win-pass').textContent = slavePass;
+    }
+  }
+  updateClientCmds();
+}
+
+function togglePass() {
+  slavePassVisible = !slavePassVisible;
+  const el = document.getElementById('client-pass');
+  el.innerHTML = (slavePassVisible ? slavePass : '•••••••') + ' <button class="btn btn-gray btn-sm" onclick="togglePass()">' + (slavePassVisible ? '🙈' : '👁') + '</button>';
+}
+
+function updateClientCmds() {
+  const ups = v('client-ups-select') || 'ippon';
+  const ip = serverIp;
+  const pass = slavePass;
+
+  document.getElementById('win-ups').textContent = ups;
+  document.getElementById('win-pass').textContent = slavePassVisible ? pass : '•••••••';
+
+  // Linux upsmon.conf
+  const linuxUpsmon = `cat > /etc/nut/upsmon.conf << 'EOF'
+MONITOR ${ups}@${ip} 1 upslave ${pass} slave
+MINSUPPLIES 1
+SHUTDOWNCMD "/sbin/shutdown -h +0"
+POLLFREQ 5
+POLLFREQALERT 5
+HOSTSYNC 15
+DEADTIME 15
+POWERDOWNFLAG /etc/killpower
+NOTIFYFLAG ONBATT  SYSLOG+WALL
+NOTIFYFLAG LOWBATT SYSLOG+WALL
+EOF`;
+  setCodeBlock('cmd-linux-upsmon', linuxUpsmon);
+  setCodeBlock('cmd-linux-check', `upsc ${ups}@${ip}`);
+
+  // Windows PowerShell
+  const ps = `# NUT Monitor Client — PowerShell
+# Опрашивает NUT сервер каждые 30 сек, выключает ПК при LB
+
+$nutServer = "${ip}"
+$nutPort   = 3493
+$upsName   = "${ups}"
+$login     = "upslave"
+$password  = "${pass}"
+
+function Get-UpsStatus {
+    try {
+        $tcp = [System.Net.Sockets.TcpClient]::new($nutServer, $nutPort)
+        $stream = $tcp.GetStream()
+        $writer = [System.IO.StreamWriter]::new($stream)
+        $reader = [System.IO.StreamReader]::new($stream)
+        $writer.WriteLine("USERNAME $login")
+        $writer.Flush(); $reader.ReadLine() | Out-Null
+        $writer.WriteLine("PASSWORD $password")
+        $writer.Flush(); $reader.ReadLine() | Out-Null
+        $writer.WriteLine("GET VAR $upsName ups.status")
+        $writer.Flush()
+        $resp = $reader.ReadLine()
+        $tcp.Close()
+        return $resp
+    } catch { return "" }
+}
+
+while ($true) {
+    $status = Get-UpsStatus
+    if ($status -match "LB") {
+        Write-EventLog -LogName Application -Source "NUTMonitor" -EventId 1001 -Message "ИБП: низкий заряд, shutdown!" -EntryType Warning
+        Start-Sleep -Seconds 10
+        Stop-Computer -Force
+    }
+    Start-Sleep -Seconds 30
+}`;
+  setCodeBlock('cmd-win-ps', ps);
+}
+
+function setCodeBlock(id, text) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Копировать';
+  btn.onclick = function() { copyCode(this); };
+  el.appendChild(btn);
+}
+
+function copyCode(btn) {
+  const block = btn.parentElement;
+  const text = block.childNodes[0].textContent || block.textContent.replace('Копировать','');
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    btn.textContent = '✓ Скопировано';
+    setTimeout(() => btn.textContent = 'Копировать', 2000);
+  });
 }
 
 // ─── Events ───
 async function loadEvents() {
-  const events = await api('/api/events');
+  const events = await api('/api/events').catch(() => []);
   const el = document.getElementById('events-list');
   if (!events.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет событий</div>'; return; }
   el.innerHTML = events.map(e =>
@@ -729,59 +992,65 @@ async function loadEvents() {
 
 // ─── NUT Server ───
 async function loadNutServices() {
-  const st = await api('/api/nut/status');
+  const st = await api('/api/nut/status').catch(() => ({}));
   renderNutStatus(st);
 }
 
 function renderNutStatus(st) {
-  document.getElementById('nut-services').innerHTML = Object.entries(st).map(([svc, status]) => `
+  const el = document.getElementById('nut-services');
+  if (!el) return;
+  el.innerHTML = Object.entries(st).map(([svc, status]) => `
     <div class="svc-row">
-      <div class="svc-dot ${status === 'active' ? 'svc-active' : 'svc-inactive'}"></div>
+      <div class="svc-dot ${status==='active'?'svc-active':'svc-inactive'}"></div>
       <span style="font-size:13px;flex:1">${svc}</span>
-      <span style="font-size:12px;color:${status==='active'?'var(--green)':'var(--red)'}">${status}</span>
+      <span style="font-size:12px;font-weight:600;color:${status==='active'?'var(--green)':'var(--red)'}">${status}</span>
     </div>
   `).join('');
 }
 
 async function restartNut() {
-  if (!confirm('Перезапустить NUT? Клиенты кратко потеряют связь.')) return;
-  const r = await api('/api/nut/restart', 'POST');
-  toast(r.ok ? 'NUT перезапущен' : r.error, r.ok ? 'ok' : 'err');
+  confirmDanger('Перезапустить NUT?', 'Клиенты кратко потеряют связь (~5 сек). Активные мониторы переподключатся автоматически.', '🔄', async () => {
+    const r = await api('/api/nut/restart', 'POST');
+    toast(r.ok ? 'NUT перезапущен' : r.error, r.ok ? 'ok' : 'err');
+    setTimeout(loadNutServices, 2000);
+  });
 }
 
 async function applyNutConfig() {
   const r = await api('/api/nut/apply', 'POST');
-  toast(r.ok ? 'Конфиг применён и NUT перезапущен' : r.error, r.ok ? 'ok' : 'err');
+  toast(r.ok ? 'Конфиг применён, NUT перезапущен' : r.error, r.ok ? 'ok' : 'err');
+  setTimeout(loadNutServices, 2000);
 }
 
 // ─── NUT Users ───
 async function loadNutUsers() {
-  const users = await api('/api/nut-users');
+  const users = await api('/api/nut-users').catch(() => []);
   const tbody = document.querySelector('#nut-users-table tbody');
+  if (!tbody) return;
   tbody.innerHTML = users.map(u => `
     <tr>
       <td><b>${u.username}</b></td>
-      <td>${u.role}</td>
-      <td><small>${u.actions || '—'} / ${u.instcmds || '—'}</small></td>
-      <td>${currentRole==='admin' ? `<button class="btn btn-red btn-sm" onclick="deleteNutUser('${u.username}')">Удалить</button>` : ''}</td>
+      <td><span class="badge ${u.role==='master'?'b-ob':'b-chrg'}">${u.role}</span></td>
+      <td style="color:var(--muted);font-size:11px">${u.actions || '—'} / ${u.instcmds || '—'}</td>
+      <td>${currentRole==='admin' ? `<button class="btn btn-red btn-sm" onclick="confirmDanger('Удалить NUT пользователя ${u.username}?','Клиенты использующие этот логин потеряют доступ.','👤',()=>deleteNutUser('${u.username}'))">Удалить</button>` : ''}</td>
     </tr>
-  `).join('');
+  `).join('') || '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:16px">Нет пользователей</td></tr>';
 }
 
-function openAddNutUser() { openModal('modal-add-nut-user'); }
-
 async function addNutUser() {
+  const name = v('add-nu-name'), pass = v('add-nu-pass');
+  if (!name || !pass) { toast('Заполните логин и пароль', 'err'); return; }
   await api('/api/nut-users', 'POST', {
-    username: v('add-nu-name'), password: v('add-nu-pass'),
-    role: v('add-nu-role'), actions: v('add-nu-actions'), instcmds: v('add-nu-instcmds'),
+    username: name, password: pass, role: v('add-nu-role'),
+    actions: v('add-nu-actions'), instcmds: v('add-nu-instcmds'),
   });
   closeModal('modal-add-nut-user');
-  toast('Пользователь добавлен', 'ok');
+  toast('NUT пользователь добавлен', 'ok');
   loadNutUsers();
+  updateClientInfo();
 }
 
 async function deleteNutUser(username) {
-  if (!confirm(`Удалить NUT пользователя ${username}?`)) return;
   await api(`/api/nut-users/${username}`, 'DELETE');
   toast('Удалено', 'ok');
   loadNutUsers();
@@ -789,31 +1058,29 @@ async function deleteNutUser(username) {
 
 // ─── Panel Users ───
 async function loadUsers() {
-  const users = await api('/api/users');
+  const users = await api('/api/users').catch(() => []);
   const tbody = document.querySelector('#users-table tbody');
+  if (!tbody) return;
   tbody.innerHTML = users.map(u => `
     <tr>
       <td><b>${u.username}</b></td>
       <td><span class="badge ${u.role==='admin'?'b-ob':'b-off'}">${u.role}</span></td>
       <td style="color:var(--muted);font-size:12px">${u.created_at || '—'}</td>
-      <td><button class="btn btn-red btn-sm" onclick="deleteUser(${u.id})">Удалить</button></td>
+      <td><button class="btn btn-red btn-sm" onclick="confirmDanger('Удалить пользователя ${u.username}?','','👤',()=>deleteUser(${u.id}))">Удалить</button></td>
     </tr>
   `).join('');
 }
 
-function openAddUser() { openModal('modal-add-user'); }
-
 async function addUser() {
-  await api('/api/users', 'POST', {
-    username: v('add-user-name'), password: v('add-user-pass'), role: v('add-user-role'),
-  });
+  const name = v('add-user-name'), pass = v('add-user-pass');
+  if (!name || !pass) { toast('Заполните логин и пароль', 'err'); return; }
+  await api('/api/users', 'POST', { username: name, password: pass, role: v('add-user-role') });
   closeModal('modal-add-user');
   toast('Пользователь добавлен', 'ok');
   loadUsers();
 }
 
 async function deleteUser(id) {
-  if (!confirm('Удалить пользователя?')) return;
   await api(`/api/users/${id}`, 'DELETE');
   toast('Удалено', 'ok');
   loadUsers();
@@ -821,8 +1088,7 @@ async function deleteUser(id) {
 
 // ─── Settings ───
 async function loadSettings() {
-  if (currentRole !== 'admin') return;
-  const s = await api('/api/settings');
+  const s = await api('/api/settings').catch(() => ({}));
   const fields = ['tg_token','tg_chat_id','smtp_host','smtp_port','smtp_user','smtp_password','smtp_to',
                   'nut_admin_user','nut_admin_pass','low_batt_threshold','shutdown_delay','poll_interval'];
   fields.forEach(k => { const el = document.getElementById(k); if (el) el.value = s[k] || ''; });
@@ -839,7 +1105,7 @@ async function saveSettings(keys) {
     if (!el) return;
     body[k] = el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value;
   });
-  await api('/api/settings', 'POST', body);
+  const r = await api('/api/settings', 'POST', body).catch(() => ({ ok: false }));
   toast('Настройки сохранены', 'ok');
 }
 
@@ -849,20 +1115,55 @@ async function saveNutSettings() {
 
 async function testTg() {
   await saveSettings(['tg_token','tg_chat_id']);
-  const r = await api('/api/settings/test-telegram', 'POST');
-  toast(r.ok ? 'Telegram: сообщение отправлено!' : 'Ошибка отправки', r.ok ? 'ok' : 'err');
+  const r = await api('/api/settings/test-telegram', 'POST').catch(() => ({ ok: false }));
+  toast(r.ok ? '✓ Telegram: сообщение отправлено!' : '✗ Ошибка. Проверь токен и Chat ID', r.ok ? 'ok' : 'err');
 }
 
 async function testEmail() {
   await saveSettings(['smtp_host','smtp_port','smtp_user','smtp_password','smtp_to']);
-  const r = await api('/api/settings/test-email', 'POST');
-  toast(r.ok ? 'Email отправлен!' : 'Ошибка отправки', r.ok ? 'ok' : 'err');
+  const r = await api('/api/settings/test-email', 'POST').catch(() => ({ ok: false }));
+  toast(r.ok ? '✓ Email отправлен!' : '✗ Ошибка отправки. Проверь SMTP настройки', r.ok ? 'ok' : 'err');
 }
 
 // ─── Auth ───
 async function logout() {
   await fetch('/api/auth/logout', { method: 'POST' });
   location.href = '/login';
+}
+
+// ─── Confirm dialog ───
+function confirmDanger(title, sub, icon, action) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-sub').textContent = sub;
+  document.getElementById('confirm-icon').textContent = icon;
+  pendingAction = action;
+  openModal('modal-confirm');
+}
+
+function confirmAction() {
+  closeModal('modal-confirm');
+  if (pendingAction) { pendingAction(); pendingAction = null; }
+}
+
+// ─── Push notifications ───
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+let prevUpsStatus = {};
+function checkPushNotify(ups) {
+  for (const [name, info] of Object.entries(ups)) {
+    const st = info.status || 'UNKNOWN';
+    const prev = prevUpsStatus[name];
+    if (prev && prev !== st) {
+      if (st.includes('OB')) pushNotify('⚠️ UPS на батарее', `${name}: питание пропало`);
+      if (st.includes('LB')) pushNotify('🔴 Низкий заряд!', `${name}: скоро shutdown`);
+      if (st.includes('OL') && prev.includes('OB')) pushNotify('✅ Питание восстановлено', name);
+    }
+    prevUpsStatus[name] = st;
+  }
+}
+function pushNotify(title, body) {
+  if (Notification.permission === 'granted') new Notification(title, { body });
 }
 
 // ─── Helpers ───
@@ -874,8 +1175,7 @@ async function api(url, method='GET', body=null) {
   return r.json();
 }
 
-function v(id) { return document.getElementById(id)?.value || ''; }
-
+function v(id) { const el = document.getElementById(id); return el ? el.value : ''; }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
@@ -892,19 +1192,19 @@ function toast(msg, type='ok') {
 
 function fmtRuntime(sec) {
   if (!sec) return '?';
-  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
   return h > 0 ? `${h}ч ${m}м` : `${m}м`;
 }
 
-function cardClass(status) {
-  if (!status || status === 'UNKNOWN') return 'unknown';
-  if (status.includes('LB')) return 'lb';
-  if (status.includes('OB')) return 'ob';
+function cardClass(st) {
+  if (!st || st==='UNKNOWN') return 'unknown';
+  if (st.includes('LB')) return 'lb';
+  if (st.includes('OB')) return 'ob';
   return 'ol';
 }
 
 function statusBadges(status) {
-  if (!status || status === 'UNKNOWN') return '<span class="badge b-off">OFFLINE</span>';
+  if (!status || status==='UNKNOWN') return '<span class="badge b-off">OFFLINE</span>';
   return status.split(' ').map(p => {
     if (p==='OL') return '<span class="badge b-ol">OL</span>';
     if (p==='OB') return '<span class="badge b-ob">OB</span>';
@@ -913,34 +1213,6 @@ function statusBadges(status) {
     return `<span class="badge b-off">${p}</span>`;
   }).join(' ');
 }
-
-// Push уведомления
-if ('Notification' in window) {
-  Notification.requestPermission();
-}
-function pushNotify(title, body) {
-  if (Notification.permission === 'granted') {
-    new Notification(title, { body, icon: '/static/icon.png' });
-  }
-}
-
-// Отслеживание смены статуса для push
-let prevUpsStatus = {};
-function checkPushNotify(ups) {
-  for (const [name, info] of Object.entries(ups)) {
-    const st = info.status;
-    const prev = prevUpsStatus[name];
-    if (prev && prev !== st) {
-      if (st.includes('OB')) pushNotify('⚠️ UPS на батарее', `${name}: ${st}`);
-      if (st.includes('LB')) pushNotify('🔴 Низкий заряд!', `${name}: ${st}`);
-      if (st.includes('OL') && prev.includes('OB')) pushNotify('✅ Питание восстановлено', `${name}: ${st}`);
-    }
-    prevUpsStatus[name] = st;
-  }
-}
-
-// Перехватываем WS данные для push
-const origRenderDashboard = renderDashboard;
 
 init();
 </script>
