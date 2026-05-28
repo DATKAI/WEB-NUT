@@ -333,20 +333,39 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 
       <!-- Windows -->
       <div class="os-pane" id="os-windows">
+
+        <!-- Вариант 1 — авто установщик -->
         <div class="card" style="margin-bottom:16px">
           <div class="section-title">Вариант 1 — WinNUT-Client (рекомендуется)</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+            Скачай готовые скрипты — они автоматически скачают WinNUT-Client с GitHub, установят и пропишут настройки подключения к этому серверу.
+          </p>
+          <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+            <a class="btn btn-green" href="/api/scripts/winnut-install.ps1" download style="text-decoration:none">
+              ⬇ Скачать winnut-install.ps1
+            </a>
+            <a class="btn btn-gray" href="/api/scripts/winnut-install.bat" download style="text-decoration:none">
+              ⬇ Скачать winnut-install.bat
+            </a>
+          </div>
           <div class="step">
             <div class="step-num">1</div>
             <div class="step-body">
-              <div class="step-title">Скачать WinNUT-Client</div>
-              <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Скачай последний релиз с GitHub:</p>
-              <div class="code-block">https://github.com/nutdotnet/WinNUT-Client/releases<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+              <div class="step-title">Скачай оба файла в одну папку</div>
+              <p style="font-size:12px;color:var(--muted)">winnut-install.ps1 и winnut-install.bat должны лежать рядом</p>
             </div>
           </div>
           <div class="step">
             <div class="step-num">2</div>
             <div class="step-body">
-              <div class="step-title">Настроить подключение</div>
+              <div class="step-title">Запусти winnut-install.bat от администратора</div>
+              <p style="font-size:12px;color:var(--muted)">Правой кнопкой → «Запуск от имени администратора». Скрипт сам скачает и настроит WinNUT-Client.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">Настройки подключения (уже прописаны в скриптах)</div>
               <table style="font-size:13px;margin-top:4px">
                 <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Server Host</td><td id="win-host" style="font-family:monospace">—</td></tr>
                 <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Port</td><td style="font-family:monospace">3493</td></tr>
@@ -356,19 +375,42 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
               </table>
             </div>
           </div>
+        </div>
+
+        <!-- Вариант 2 — PS мониторинг -->
+        <div class="card">
+          <div class="section-title">Вариант 2 — PowerShell скрипт (без сторонних программ)</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+            Устанавливается как задача планировщика Windows, запускается при старте системы автоматически. При низком заряде выключает ПК.
+          </p>
+          <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+            <a class="btn btn-green" href="/api/scripts/nut-monitor.ps1" download style="text-decoration:none">
+              ⬇ Скачать nut-monitor.ps1
+            </a>
+            <a class="btn btn-gray" href="/api/scripts/nut-monitor.bat" download style="text-decoration:none">
+              ⬇ Скачать nut-monitor.bat
+            </a>
+          </div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Скачай оба файла в одну папку</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Запусти nut-monitor.bat от администратора</div>
+              <p style="font-size:12px;color:var(--muted)">Выбери пункт [1] — установит как задачу планировщика и запустит сразу</p>
+            </div>
+          </div>
           <div class="step">
             <div class="step-num">3</div>
             <div class="step-body">
-              <div class="step-title">Установить как службу Windows</div>
-              <p style="font-size:12px;color:var(--muted)">В настройках WinNUT-Client включи «Run as Windows Service» — это обеспечит shutdown даже без входа пользователя.</p>
+              <div class="step-title">Лог работы</div>
+              <div class="code-block" style="margin-top:6px">C:\ProgramData\NUT-Monitor\nut-monitor.log<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
             </div>
           </div>
-        </div>
-        <div class="card">
-          <div class="section-title">Вариант 2 — PowerShell скрипт (мониторинг и shutdown)</div>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Альтернатива если WinNUT-Client не подходит. Скрипт опрашивает NUT сервер и выключает ПК при OB+LB.</p>
-          <div class="code-block" id="cmd-win-ps" style="max-height:220px;overflow-y:auto">загрузка...<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
-          <p style="font-size:11px;color:var(--muted);margin-top:8px">Запуск: сохрани как <code>nut-monitor.ps1</code>, добавь в Планировщик задач при старте системы.</p>
         </div>
       </div>
     </div>
