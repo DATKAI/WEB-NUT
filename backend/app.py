@@ -371,8 +371,17 @@ def _get_ups_names():
     devices = db.get_ups_list()
     return [d["name"] for d in devices] or ["ippon"]
 
-@app.get("/api/scripts/winnut-install.ps1")
-async def script_winnut_ps(request: Request):
+def _make_zip(*files) -> bytes:
+    import io, zipfile
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, content in files:
+            z.writestr(name, content)
+    return buf.getvalue()
+
+
+@app.get("/api/scripts/winnut-install.zip")
+async def script_winnut_zip(request: Request):
     require_user(request)
     ip = _get_server_ip(request)
     user, password = _get_slave_creds()
@@ -474,16 +483,7 @@ Write-Host ""
 Write-Host "Press any key to exit..."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 """
-    from fastapi.responses import PlainTextResponse
-    return PlainTextResponse(script, media_type="application/octet-stream",
-        headers={"Content-Disposition": "attachment; filename=winnut-install.ps1"})
-
-
-@app.get("/api/scripts/winnut-install.bat")
-async def script_winnut_bat(request: Request):
-    require_user(request)
-    ip = _get_server_ip(request)
-    script = f"""@echo off
+    bat = f"""@echo off
 :: WinNUT-Client Auto Installer — NUT Server: {ip}
 :: Run as Administrator
 
@@ -499,8 +499,18 @@ echo.
 echo Press any key to exit...
 pause >nul
 """
+    from fastapi.responses import Response as FR
+    data = _make_zip(("winnut-install.ps1", script), ("winnut-install.bat", bat))
+    return FR(content=data, media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=winnut-install.zip"})
+
+
+@app.get("/api/scripts/winnut-install.bat")
+async def script_winnut_bat(request: Request):
+    require_user(request)
+    ip = _get_server_ip(request)
     from fastapi.responses import PlainTextResponse
-    return PlainTextResponse(script, media_type="text/plain",
+    return PlainTextResponse(f"@echo off\npowershell -ExecutionPolicy Bypass -File winnut-install.ps1\npause", media_type="text/plain",
         headers={"Content-Disposition": "attachment; filename=winnut-install.bat"})
 
 
@@ -617,15 +627,7 @@ switch ($choice) {{
 }}
 """
     from fastapi.responses import PlainTextResponse
-    return PlainTextResponse(script, media_type="application/octet-stream",
-        headers={"Content-Disposition": "attachment; filename=nut-monitor.ps1"})
-
-
-@app.get("/api/scripts/nut-monitor.bat")
-async def script_monitor_bat(request: Request):
-    require_user(request)
-    ip = _get_server_ip(request)
-    script = f"""@echo off
+    bat = f"""@echo off
 :: NUT Monitor Client Launcher — NUT Server: {ip}
 :: Run as Administrator to install as service
 
@@ -639,8 +641,17 @@ if %errorlevel% neq 0 (
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0nut-monitor.ps1"
 pause
 """
+    from fastapi.responses import Response as FR
+    data = _make_zip(("nut-monitor.ps1", script), ("nut-monitor.bat", bat))
+    return FR(content=data, media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=nut-monitor.zip"})
+
+
+@app.get("/api/scripts/nut-monitor.bat")
+async def script_monitor_bat(request: Request):
+    require_user(request)
     from fastapi.responses import PlainTextResponse
-    return PlainTextResponse(script, media_type="text/plain",
+    return PlainTextResponse("@echo off\npowershell -ExecutionPolicy Bypass -File nut-monitor.ps1\npause", media_type="text/plain",
         headers={"Content-Disposition": "attachment; filename=nut-monitor.bat"})
 
 
