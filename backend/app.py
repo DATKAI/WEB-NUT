@@ -1,5 +1,6 @@
 import asyncio
 import json
+import subprocess
 from datetime import datetime
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -146,13 +147,14 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.post("/api/auth/login")
-async def login(req: LoginRequest, response: Response):
+async def login(req: LoginRequest):
     user = db.authenticate_user(req.username, req.password)
     if not user:
         raise HTTPException(status_code=401, detail="Неверный логин или пароль")
     token = auth.create_session(user)
-    response.set_cookie("session", token, httponly=True, max_age=86400)
-    return {"ok": True, "role": user["role"], "username": user["username"]}
+    resp = JSONResponse({"ok": True, "role": user["role"], "username": user["username"]})
+    resp.set_cookie("session", token, httponly=True, max_age=86400, samesite="lax")
+    return resp
 
 @app.post("/api/auth/logout")
 async def logout(request: Request, response: Response):
@@ -353,6 +355,29 @@ async def api_nut_users_delete(username: str, request: Request):
     _apply_nut_config()
     return {"ok": True}
 
+
+# ─────────── Клиенты ───────────
+
+@app.get("/api/clients")
+async def api_clients(request: Request):
+    require_user(request)
+    try:
+        result = subprocess.run(
+            ["ss", "-tnp"],
+            capture_output=True, text=True, timeout=5
+        )
+        clients = []
+        for line in result.stdout.splitlines():
+            if ":3493" in line and "ESTAB" in line:
+                parts = line.split()
+                # Формат: State Recv-Q Send-Q Local Peer
+                peer = parts[4] if len(parts) > 4 else ""
+                ip = peer.rsplit(":", 1)[0] if ":" in peer else peer
+                if ip and ip not in ("", "0.0.0.0"):
+                    clients.append({"ip": ip, "state": "connected"})
+        return clients
+    except Exception as e:
+        return []
 
 # ─────────── События ───────────
 

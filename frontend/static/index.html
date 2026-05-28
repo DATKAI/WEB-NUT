@@ -165,6 +165,15 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 .scan-item-info h4{font-size:13px;font-weight:600;}
 .scan-item-info p{font-size:11px;color:var(--muted);margin-top:3px;}
 
+/* Status legend */
+.status-legend-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0f1117;border-radius:8px;}
+.legend-text{font-size:12px;color:var(--muted);}
+
+/* Client list */
+.client-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.client-row:last-child{border-bottom:none;}
+.client-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;}
+
 @media(max-width:768px){.sidebar{display:none;}.ups-grid{grid-template-columns:1fr;}.form-grid{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}}
 </style>
 </head>
@@ -203,7 +212,33 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
-      <div class="ups-grid" id="ups-grid"></div>
+      <div class="ups-grid" id="ups-grid">
+        <div style="color:var(--muted);font-size:13px;padding:20px">Загрузка...</div>
+      </div>
+
+      <!-- Легенда статусов -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="section-title">Статусы ИБП</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <div class="status-legend-item"><span class="badge b-ol">OL</span><span class="legend-text">Сеть в норме — питание от сети</span></div>
+          <div class="status-legend-item"><span class="badge b-ob">OB</span><span class="legend-text">На батарее — пропало питание</span></div>
+          <div class="status-legend-item"><span class="badge b-lb">LB</span><span class="legend-text">Низкий заряд — скоро выключение</span></div>
+          <div class="status-legend-item"><span class="badge b-chrg">CHRG</span><span class="legend-text">Заряжается — батарея не полная</span></div>
+          <div class="status-legend-item"><span class="badge" style="background:#1a1a2e;color:#818cf8">TRIM</span><span class="legend-text">Режет напряжение — слишком высокое</span></div>
+          <div class="status-legend-item"><span class="badge" style="background:#1a1a2e;color:#fb923c">BOOST</span><span class="legend-text">Поднимает напряжение — слишком низкое</span></div>
+          <div class="status-legend-item"><span class="badge" style="background:#450a0a;color:#f87171">FSD</span><span class="legend-text">Принудительное выключение</span></div>
+        </div>
+      </div>
+
+      <!-- Клиенты -->
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="section-title" style="margin:0">Подключённые клиенты</div>
+          <button class="btn btn-gray btn-sm" onclick="loadNutClients()">🔄</button>
+        </div>
+        <div id="dash-clients"><div style="color:var(--muted);font-size:13px">Загрузка...</div></div>
+      </div>
+
       <div class="card">
         <div class="section-title">Последние события</div>
         <div id="dash-events"><div style="color:var(--muted);font-size:13px">Нет событий</div></div>
@@ -587,6 +622,16 @@ async function init() {
     if (r.role !== 'admin') {
       document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
     }
+    // Загружаем данные сразу, не ждём WebSocket
+    const upsData = await api('/api/ups').catch(() => ({}));
+    if (Object.keys(upsData).length) {
+      currentUpsData = upsData;
+      renderDashboard(upsData);
+    }
+    const eventsData = await api('/api/events').catch(() => []);
+    renderDashEvents(eventsData);
+    loadNutClients();
+
     if (r.role === 'admin') {
       loadSettings();
       loadNutUsers();
@@ -594,7 +639,6 @@ async function init() {
     }
     loadDevicesTable();
     loadNutServices();
-    loadEvents();
     connectWs();
     updateClientInfo();
   } catch {
@@ -980,6 +1024,24 @@ function copyCode(btn) {
   });
 }
 
+// ─── NUT Clients ───
+async function loadNutClients() {
+  const clients = await api('/api/clients').catch(() => []);
+  const el = document.getElementById('dash-clients');
+  if (!el) return;
+  if (!clients.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет подключённых клиентов</div>';
+    return;
+  }
+  el.innerHTML = clients.map(c => `
+    <div class="client-row">
+      <div class="client-dot"></div>
+      <span style="font-family:monospace;font-size:13px">${c.ip}</span>
+      <span style="color:var(--green);font-size:12px">подключён</span>
+    </div>
+  `).join('');
+}
+
 // ─── Events ───
 async function loadEvents() {
   const events = await api('/api/events').catch(() => []);
@@ -1203,13 +1265,26 @@ function cardClass(st) {
   return 'ol';
 }
 
+const STATUS_RU = {
+  'OL':   { cls: 'b-ol',   text: 'Сеть',        icon: '✅' },
+  'OB':   { cls: 'b-ob',   text: 'Батарея',      icon: '⚠️' },
+  'LB':   { cls: 'b-lb',   text: 'Низкий заряд', icon: '🔴' },
+  'CHRG': { cls: 'b-chrg', text: 'Заряжается',   icon: '⚡' },
+  'TRIM': { cls: '',        text: 'Срез напр.',   icon: '📉', style: 'background:#1a1a2e;color:#818cf8' },
+  'BOOST':{ cls: '',        text: 'Подъём напр.', icon: '📈', style: 'background:#1a1a2e;color:#fb923c' },
+  'FSD':  { cls: '',        text: 'Shutdown!',    icon: '🔴', style: 'background:#450a0a;color:#f87171' },
+  'RB':   { cls: 'b-ob',   text: 'Замени АКБ',   icon: '🔋' },
+};
+
 function statusBadges(status) {
-  if (!status || status==='UNKNOWN') return '<span class="badge b-off">OFFLINE</span>';
+  if (!status || status === 'UNKNOWN') return '<span class="badge b-off">⚫ Нет данных</span>';
   return status.split(' ').map(p => {
-    if (p==='OL') return '<span class="badge b-ol">OL</span>';
-    if (p==='OB') return '<span class="badge b-ob">OB</span>';
-    if (p==='LB') return '<span class="badge b-lb">LB</span>';
-    if (p==='CHRG') return '<span class="badge b-chrg">CHRG</span>';
+    const s = STATUS_RU[p];
+    if (s) {
+      const style = s.style ? `style="${s.style}"` : '';
+      const cls = s.cls ? `class="badge ${s.cls}"` : 'class="badge"';
+      return `<span ${cls} ${style} title="${p}">${s.icon} ${s.text}</span>`;
+    }
     return `<span class="badge b-off">${p}</span>`;
   }).join(' ');
 }
