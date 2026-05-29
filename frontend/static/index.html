@@ -1137,8 +1137,26 @@ function setCodeBlock(id, text) {
 
 function copyCode(btn) {
   const block = btn.parentElement;
-  const text = block.childNodes[0].textContent || block.textContent.replace('Копировать','');
-  navigator.clipboard.writeText(text.trim()).then(() => {
+  // Collect text from all child nodes except the button itself
+  let text = '';
+  block.childNodes.forEach(node => {
+    if (node === btn) return;
+    if (node.nodeName === 'BR') { text += '\n'; return; }
+    text += node.textContent || '';
+  });
+  text = text.trim();
+  if (!text) text = block.innerText.replace(/Копировать$/, '').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Скопировано';
+    setTimeout(() => btn.textContent = 'Копировать', 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
     btn.textContent = '✓ Скопировано';
     setTimeout(() => btn.textContent = 'Копировать', 2000);
   });
