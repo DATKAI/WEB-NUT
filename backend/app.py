@@ -153,7 +153,7 @@ async def poll_loop():
 
                 prev_status[name] = st
 
-            events = db.get_events(20)
+            events = db.get_events(20).get("items", [])
             nut_status = nut.get_nut_status()
             await ws_manager.broadcast({
                 "ups": all_info,
