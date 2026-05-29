@@ -332,70 +332,67 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
       <!-- Windows -->
       <div class="os-pane" id="os-windows">
 
-        <!-- Вариант 1 — авто установщик -->
+        <!-- WinNUT-Client ручная настройка -->
         <div class="card" style="margin-bottom:16px">
-          <div class="section-title">Вариант 1 — WinNUT-Client (рекомендуется)</div>
+          <div class="section-title">Вариант 1 — WinNUT-Client (GUI, рекомендуется)</div>
           <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-            Автоматически скачает WinNUT-Client с GitHub, установит и пропишет настройки этого сервера. Запускается одной командой.
+            Бесплатная программа с иконкой в трее, показывает статус ИБП. Скачай с GitHub и настрой вручную.
           </p>
           <div class="step">
             <div class="step-num">1</div>
             <div class="step-body">
-              <div class="step-title">Открой PowerShell от имени администратора</div>
-              <p style="font-size:12px;color:var(--muted)">Пуск → PowerShell → правой кнопкой → «Запуск от имени администратора»</p>
+              <div class="step-title">Скачай WinNUT-Client</div>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:6px">Перейди по ссылке и скачай последний Setup.exe:</p>
+              <div class="code-block">https://github.com/nutdotnet/WinNUT-Client/releases/latest<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
             </div>
           </div>
           <div class="step">
             <div class="step-num">2</div>
             <div class="step-body">
-              <div class="step-title">Вставь и выполни команду:</div>
-              <div class="code-block" style="margin-top:8px;word-break:break-all" id="cmd-winnut">
-                irm http://localhost/api/scripts/winnut-install.ps1 | iex
-                <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
-              </div>
+              <div class="step-title">Установи и открой настройки</div>
+              <p style="font-size:12px;color:var(--muted)">После установки → правой кнопкой на иконке в трее → Settings</p>
             </div>
           </div>
           <div class="step">
             <div class="step-num">3</div>
             <div class="step-body">
-              <div class="step-title">Настройки (уже встроены в скрипт)</div>
-              <table style="font-size:13px;margin-top:4px">
-                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Server</td><td id="win-host" style="font-family:monospace">—</td></tr>
-                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Port</td><td style="font-family:monospace">3493</td></tr>
-                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">UPS</td><td id="win-ups" style="font-family:monospace">—</td></tr>
+              <div class="step-title">Введи параметры подключения</div>
+              <table style="font-size:13px;margin-top:6px;border-collapse:collapse">
+                <tr><td style="color:var(--muted);padding:5px 16px 5px 0">NUT Host</td><td id="win-host" style="font-family:monospace;color:#60a5fa">—</td></tr>
+                <tr><td style="color:var(--muted);padding:5px 16px 5px 0">Port</td><td style="font-family:monospace;color:#60a5fa">3493</td></tr>
+                <tr><td style="color:var(--muted);padding:5px 16px 5px 0">UPS Name</td><td id="win-ups" style="font-family:monospace;color:#60a5fa">—</td></tr>
+                <tr><td style="color:var(--muted);padding:5px 16px 5px 0">Login</td><td id="win-login" style="font-family:monospace;color:#60a5fa">—</td></tr>
+                <tr><td style="color:var(--muted);padding:5px 16px 5px 0">Password</td><td id="win-pass-show" style="font-family:monospace;color:#60a5fa">—</td></tr>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- Вариант 2 — PS мониторинг -->
+        <!-- Вариант 2 — upsmon вручную -->
         <div class="card">
-          <div class="section-title">Вариант 2 — PowerShell скрипт (без сторонних программ)</div>
+          <div class="section-title">Вариант 2 — NUT upsmon (автовыключение при разряде)</div>
           <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-            Устанавливается как задача планировщика Windows, запускается при старте системы. При низком заряде батареи выключает ПК.
+            Мониторинг через NUT клиент. При низком заряде батареи автоматически выключает компьютер. Требует установки NUT для Windows.
           </p>
           <div class="step">
             <div class="step-num">1</div>
             <div class="step-body">
-              <div class="step-title">Открой PowerShell от имени администратора</div>
-              <p style="font-size:12px;color:var(--muted)">Пуск → PowerShell → правой кнопкой → «Запуск от имени администратора»</p>
+              <div class="step-title">Скачай NUT для Windows</div>
+              <div class="code-block" style="margin-top:6px">https://github.com/networkupstools/nut/releases<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
             </div>
           </div>
           <div class="step">
             <div class="step-num">2</div>
             <div class="step-body">
-              <div class="step-title">Вставь и выполни команду:</div>
-              <div class="code-block" style="margin-top:8px;word-break:break-all" id="cmd-monitor">
-                irm http://localhost/api/scripts/nut-monitor.ps1 | iex
-                <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
-              </div>
+              <div class="step-title">Создай C:\nut\etc\upsmon.conf</div>
+              <div class="code-block" style="margin-top:6px" id="win-upsmon-conf">MONITOR ups@192.168.10.3 1 upslave password slave<br>SHUTDOWNCMD "shutdown /s /t 30"<br>MINSUPPLIES 1<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
             </div>
           </div>
           <div class="step">
             <div class="step-num">3</div>
             <div class="step-body">
-              <div class="step-title">В меню выбери [1] — установит как задачу планировщика</div>
-              <p style="font-size:12px;color:var(--muted)">Лог: C:\ProgramData\NUT-Monitor\nut-monitor.log</p>
+              <div class="step-title">Запусти upsmon как службу</div>
+              <div class="code-block" style="margin-top:6px">C:\nut\sbin\upsmon.exe -F<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
             </div>
           </div>
         </div>
@@ -954,6 +951,7 @@ async function updateClientInfo() {
     const s = await api('/api/settings').catch(() => ({}));
     // Пароль slave берём из NUT users
     const nutUsers = await api('/api/nut-users').catch(() => []);
+    window._nutUsers = nutUsers;
     const slave = nutUsers.find(u => u.role === 'slave');
     if (slave) {
       slavePass = slave.password;
@@ -974,19 +972,20 @@ function updateClientCmds() {
   const ip = serverIp;
   const pass = slavePass;
 
-  document.getElementById('win-ups').textContent = ups;
+  document.getElementById('win-ups') && (document.getElementById('win-ups').textContent = ups);
   document.getElementById('win-pass') && (document.getElementById('win-pass').textContent = slavePassVisible ? pass : '•••••••');
 
-  // PowerShell one-liner commands с реальным IP
-  const cmdWinnut = document.getElementById('cmd-winnut');
-  if (cmdWinnut) {
-    const url = `http://${ip}:8000/api/scripts/winnut-install.ps1`;
-    cmdWinnut.innerHTML = `irm ${url} | iex<button class="copy-btn" onclick="copyCode(this)">Копировать</button>`;
-  }
-  const cmdMonitor = document.getElementById('cmd-monitor');
-  if (cmdMonitor) {
-    const url = `http://${ip}:8000/api/scripts/nut-monitor.ps1`;
-    cmdMonitor.innerHTML = `irm ${url} | iex<button class="copy-btn" onclick="copyCode(this)">Копировать</button>`;
+  // Заполняем таблицу ручной настройки
+  const nutUsers = window._nutUsers || [];
+  const slave = nutUsers.find(u => u.role === 'slave') || {};
+  const slaveLogin = slave.username || 'upslave';
+  const slavePassword = slave.password || '—';
+  document.getElementById('win-host') && (document.getElementById('win-host').textContent = ip);
+  document.getElementById('win-login') && (document.getElementById('win-login').textContent = slaveLogin);
+  document.getElementById('win-pass-show') && (document.getElementById('win-pass-show').textContent = slavePassword);
+  const upsmonConf = document.getElementById('win-upsmon-conf');
+  if (upsmonConf) {
+    upsmonConf.innerHTML = `MONITOR ${ups}@${ip} 1 ${slaveLogin} ${slavePassword} slave<br>SHUTDOWNCMD "shutdown /s /t 30"<br>MINSUPPLIES 1<button class="copy-btn" onclick="copyCode(this)">Копировать</button>`;
   }
 
   // Linux upsmon.conf
