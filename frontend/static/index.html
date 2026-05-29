@@ -336,37 +336,33 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
         <div class="card" style="margin-bottom:16px">
           <div class="section-title">Вариант 1 — WinNUT-Client (рекомендуется)</div>
           <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-            Скачай готовые скрипты — они автоматически скачают WinNUT-Client с GitHub, установят и пропишут настройки подключения к этому серверу.
+            Автоматически скачает WinNUT-Client с GitHub, установит и пропишет настройки этого сервера. Запускается одной командой.
           </p>
-          <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-            <a class="btn btn-green" href="/api/scripts/winnut-install.zip" download style="text-decoration:none">
-              ⬇ Скачать winnut-install.zip
-            </a>
-          </div>
           <div class="step">
             <div class="step-num">1</div>
             <div class="step-body">
-              <div class="step-title">Скачай и распакуй winnut-install.zip</div>
-              <p style="font-size:12px;color:var(--muted)">Внутри архива: winnut-install.ps1 и winnut-install.bat</p>
+              <div class="step-title">Открой PowerShell от имени администратора</div>
+              <p style="font-size:12px;color:var(--muted)">Пуск → PowerShell → правой кнопкой → «Запуск от имени администратора»</p>
             </div>
           </div>
           <div class="step">
             <div class="step-num">2</div>
             <div class="step-body">
-              <div class="step-title">Запусти winnut-install.bat от администратора</div>
-              <p style="font-size:12px;color:var(--muted)">Правой кнопкой → «Запуск от имени администратора». Скрипт сам скачает и настроит WinNUT-Client.</p>
+              <div class="step-title">Вставь и выполни команду:</div>
+              <div class="code-block" style="margin-top:8px;word-break:break-all" id="cmd-winnut">
+                irm http://localhost/api/scripts/winnut-install.ps1 | iex
+                <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+              </div>
             </div>
           </div>
           <div class="step">
             <div class="step-num">3</div>
             <div class="step-body">
-              <div class="step-title">Настройки подключения (уже прописаны в скриптах)</div>
+              <div class="step-title">Настройки (уже встроены в скрипт)</div>
               <table style="font-size:13px;margin-top:4px">
-                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Server Host</td><td id="win-host" style="font-family:monospace">—</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Server</td><td id="win-host" style="font-family:monospace">—</td></tr>
                 <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Port</td><td style="font-family:monospace">3493</td></tr>
-                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">UPS Name</td><td id="win-ups" style="font-family:monospace">ippon</td></tr>
-                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Login</td><td style="font-family:monospace">upslave</td></tr>
-                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">Password</td><td id="win-pass" style="font-family:monospace">•••••••</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 12px 4px 0">UPS</td><td id="win-ups" style="font-family:monospace">—</td></tr>
               </table>
             </div>
           </div>
@@ -376,31 +372,30 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
         <div class="card">
           <div class="section-title">Вариант 2 — PowerShell скрипт (без сторонних программ)</div>
           <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-            Устанавливается как задача планировщика Windows, запускается при старте системы автоматически. При низком заряде выключает ПК.
+            Устанавливается как задача планировщика Windows, запускается при старте системы. При низком заряде батареи выключает ПК.
           </p>
-          <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-            <a class="btn btn-green" href="/api/scripts/nut-monitor.zip" download style="text-decoration:none">
-              ⬇ Скачать nut-monitor.zip
-            </a>
-          </div>
           <div class="step">
             <div class="step-num">1</div>
             <div class="step-body">
-              <div class="step-title">Скачай оба файла в одну папку</div>
+              <div class="step-title">Открой PowerShell от имени администратора</div>
+              <p style="font-size:12px;color:var(--muted)">Пуск → PowerShell → правой кнопкой → «Запуск от имени администратора»</p>
             </div>
           </div>
           <div class="step">
             <div class="step-num">2</div>
             <div class="step-body">
-              <div class="step-title">Запусти nut-monitor.bat от администратора</div>
-              <p style="font-size:12px;color:var(--muted)">Выбери пункт [1] — установит как задачу планировщика и запустит сразу</p>
+              <div class="step-title">Вставь и выполни команду:</div>
+              <div class="code-block" style="margin-top:8px;word-break:break-all" id="cmd-monitor">
+                irm http://localhost/api/scripts/nut-monitor.ps1 | iex
+                <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+              </div>
             </div>
           </div>
           <div class="step">
             <div class="step-num">3</div>
             <div class="step-body">
-              <div class="step-title">Лог работы</div>
-              <div class="code-block" style="margin-top:6px">C:\ProgramData\NUT-Monitor\nut-monitor.log<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+              <div class="step-title">В меню выбери [1] — установит как задачу планировщика</div>
+              <p style="font-size:12px;color:var(--muted)">Лог: C:\ProgramData\NUT-Monitor\nut-monitor.log</p>
             </div>
           </div>
         </div>
@@ -962,7 +957,7 @@ async function updateClientInfo() {
     const slave = nutUsers.find(u => u.role === 'slave');
     if (slave) {
       slavePass = slave.password;
-      document.getElementById('win-pass').textContent = slavePass;
+      // win-pass removed from UI (password embedded in one-liner URL)
     }
   }
   updateClientCmds();
@@ -980,7 +975,19 @@ function updateClientCmds() {
   const pass = slavePass;
 
   document.getElementById('win-ups').textContent = ups;
-  document.getElementById('win-pass').textContent = slavePassVisible ? pass : '•••••••';
+  document.getElementById('win-pass') && (document.getElementById('win-pass').textContent = slavePassVisible ? pass : '•••••••');
+
+  // PowerShell one-liner commands с реальным IP
+  const cmdWinnut = document.getElementById('cmd-winnut');
+  if (cmdWinnut) {
+    const url = `http://${ip}:8000/api/scripts/winnut-install.ps1`;
+    cmdWinnut.innerHTML = `irm ${url} | iex<button class="copy-btn" onclick="copyCode(this)">Копировать</button>`;
+  }
+  const cmdMonitor = document.getElementById('cmd-monitor');
+  if (cmdMonitor) {
+    const url = `http://${ip}:8000/api/scripts/nut-monitor.ps1`;
+    cmdMonitor.innerHTML = `irm ${url} | iex<button class="copy-btn" onclick="copyCode(this)">Копировать</button>`;
+  }
 
   // Linux upsmon.conf
   const linuxUpsmon = `cat > /etc/nut/upsmon.conf << 'EOF'
