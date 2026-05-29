@@ -1137,29 +1137,36 @@ function setCodeBlock(id, text) {
 
 function copyCode(btn) {
   const block = btn.parentElement;
-  // Collect text from all child nodes except the button itself
-  let text = '';
-  block.childNodes.forEach(node => {
-    if (node === btn) return;
-    if (node.nodeName === 'BR') { text += '\n'; return; }
-    text += node.textContent || '';
-  });
-  text = text.trim();
-  if (!text) text = block.innerText.replace(/Копировать$/, '').trim();
-  navigator.clipboard.writeText(text).then(() => {
+  // Clone block, remove button from clone, read innerText
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('button').forEach(b => b.remove());
+  // Replace <br> with newlines
+  clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+  const text = (clone.innerText || clone.textContent || '').trim();
+
+  function done() {
     btn.textContent = '✓ Скопировано';
     setTimeout(() => btn.textContent = 'Копировать', 2000);
-  }).catch(() => {
-    // Fallback for older browsers
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    btn.textContent = '✓ Скопировано';
-    setTimeout(() => btn.textContent = 'Копировать', 2000);
-  });
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallback(text, done));
+  } else {
+    fallback(text, done);
+  }
+}
+
+function fallback(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  done();
 }
 
 // ─── NUT Clients ───
