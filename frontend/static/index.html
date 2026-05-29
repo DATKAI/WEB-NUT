@@ -191,6 +191,11 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 .scan-item-info h4{font-size:13px;font-weight:600;}
 .scan-item-info p{font-size:11px;color:var(--muted);margin-top:3px;}
 
+/* ntfy guide block */
+.ntfy-guide{background:var(--nav-active);border:1px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px;color:var(--text);line-height:1.8;}
+.ntfy-guide a{color:var(--accent);}
+.ntfy-guide code{background:var(--stat-bg);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--code-color);}
+
 /* Status legend */
 .status-legend-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px;}
 .legend-text{font-size:12px;color:var(--text);}
@@ -544,14 +549,14 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
           <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
             Бесплатный сервис push-уведомлений. Работает в России без VPN. Уведомления приходят на телефон мгновенно.
           </p>
-          <div style="background:#1e3a5f;border:1px solid #2563eb;border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px">
-            <b style="color:#60a5fa">🚀 Быстрая настройка (2 минуты):</b><br><br>
-            <b style="color:#e0e0e0">1.</b> Установи приложение <b>ntfy</b>:
-            <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" style="color:#60a5fa">Android</a> /
-            <a href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" style="color:#60a5fa">iOS</a><br>
-            <b style="color:#e0e0e0">2.</b> Придумай уникальное название темы, например: <code style="color:#a5f3fc">nut-monitor-иванов2024</code><br>
-            <b style="color:#e0e0e0">3.</b> В приложении нажми <b>+</b> и подпишись на свою тему<br>
-            <b style="color:#e0e0e0">4.</b> Введи URL ниже и нажми Сохранить
+          <div class="ntfy-guide">
+            <b class="ntfy-guide-title">🚀 Быстрая настройка (2 минуты):</b><br><br>
+            <b>1.</b> Установи приложение <b>ntfy</b>:
+            <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank">Android</a> /
+            <a href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank">iOS</a><br>
+            <b>2.</b> Придумай уникальное название темы, например: <code>nut-monitor-иванов2024</code><br>
+            <b>3.</b> В приложении нажми <b>+</b> и подпишись на свою тему<br>
+            <b>4.</b> Введи URL ниже и нажми Сохранить
           </div>
           <div class="form-grid" style="max-width:500px">
             <div class="form-group full">
