@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NUT Monitor</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root {
   --bg:#0f1117; --card:#1a1d27; --border:#2a2d3e;
@@ -270,6 +271,26 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
         <div class="section-title">Клиенты</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:10px">NUT Monitor Service (Windows) и nut-heartbeat (Linux)</p>
         <div id="monitored-clients-table-dash"><div style="color:var(--muted);font-size:13px">Загрузка...</div></div>
+      </div>
+
+      <!-- Графики -->
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="section-title" style="margin:0">Графики</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="chart-ups-select" style="max-width:160px;padding:5px 10px;font-size:12px" onchange="loadCharts()">
+              <option value="">Все ИБП</option>
+            </select>
+            <select id="chart-period" style="max-width:120px;padding:5px 10px;font-size:12px" onchange="loadCharts()">
+              <option value="60">1 час</option>
+              <option value="360">6 часов</option>
+              <option value="1440">24 часа</option>
+            </select>
+          </div>
+        </div>
+        <div id="charts-container" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px">
+          <div style="color:var(--muted);font-size:13px">Загрузка графиков...</div>
+        </div>
       </div>
 
       <div class="card">
@@ -815,6 +836,20 @@ async function init() {
     updateClientInfo();
     loadMonitoredClients();
     setInterval(loadMonitoredClients, 30000);
+    // Графики — загружаем через 1 сек после инициализации
+    setTimeout(() => {
+      const upsNames = Object.keys(currentUpsData || {});
+      const sel = document.getElementById('chart-ups-select');
+      if (sel && upsNames.length) {
+        upsNames.forEach(n => {
+          const opt = document.createElement('option');
+          opt.value = n; opt.textContent = n;
+          sel.appendChild(opt);
+        });
+      }
+      loadCharts();
+    }, 1500);
+    setInterval(loadCharts, 60000); // обновляем каждую минуту
   } catch {
     location.href = '/login';
   }
@@ -885,6 +920,124 @@ function connectWs() {
     setTimeout(connectWs, 3000);
   };
   ws.onerror = () => ws.close();
+}
+
+// ─── Charts ───
+const _charts = {};
+
+function chartColor(type) {
+  const dark = !document.documentElement.classList.contains('light');
+  const colors = {
+    charge:  dark ? 'rgba(34,197,94,0.8)'   : 'rgba(22,163,74,0.8)',
+    load:    dark ? 'rgba(96,165,250,0.8)'  : 'rgba(37,99,235,0.8)',
+    voltage: dark ? 'rgba(167,139,250,0.8)' : 'rgba(109,40,217,0.8)',
+    runtime: dark ? 'rgba(251,146,60,0.8)'  : 'rgba(194,65,12,0.8)',
+  };
+  return colors[type] || 'rgba(99,102,241,0.8)';
+}
+
+function makeChart(canvasId, label, color, labels, data, unit) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const dark = !document.documentElement.classList.contains('light');
+  const gridColor = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+  const textColor = dark ? '#6b7280' : '#64748b';
+  if (_charts[canvasId]) { _charts[canvasId].destroy(); }
+  _charts[canvasId] = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label,
+        data,
+        borderColor: color,
+        backgroundColor: color.replace('0.8)', '0.1)'),
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        fill: true,
+        tension: 0.3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 400 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => `${ctx.parsed.y}${unit}` }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: { color: textColor, maxTicksLimit: 8, maxRotation: 0 }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: textColor, callback: v => v + unit }
+        }
+      }
+    }
+  });
+}
+
+async function loadCharts() {
+  const container = document.getElementById('charts-container');
+  if (!container) return;
+
+  const period = parseInt(document.getElementById('chart-period')?.value || '60');
+  const selectedUps = document.getElementById('chart-ups-select')?.value || '';
+  const upsList = selectedUps ? [selectedUps] : Object.keys(currentUpsData || {});
+
+  if (!upsList.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет данных</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+
+  for (const name of upsList) {
+    try {
+      const metrics = await api(`/api/ups/${name}/metrics?limit=${period}`);
+      if (!metrics.length) continue;
+
+      const labels = metrics.map(m => {
+        const d = new Date(m.ts.replace(' ', 'T'));
+        return d.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+      });
+
+      // Карточка с 2 графиками для каждого ИБП
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.cssText = 'padding:16px;margin:0';
+      card.innerHTML = `
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text)">⚡ ${name}</div>
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Заряд батареи, %</div>
+          <div style="height:100px"><canvas id="chart-${name}-charge"></canvas></div>
+        </div>
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Нагрузка, %</div>
+          <div style="height:100px"><canvas id="chart-${name}-load"></canvas></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Входное напряжение, В</div>
+          <div style="height:100px"><canvas id="chart-${name}-voltage"></canvas></div>
+        </div>
+      `;
+      container.appendChild(card);
+
+      // Ждём пока DOM обновится
+      await new Promise(r => setTimeout(r, 0));
+
+      makeChart(`chart-${name}-charge`,  'Заряд',     chartColor('charge'),  labels, metrics.map(m => m.charge),        '%');
+      makeChart(`chart-${name}-load`,    'Нагрузка',  chartColor('load'),    labels, metrics.map(m => m.load),          '%');
+      makeChart(`chart-${name}-voltage`, 'Напряжение',chartColor('voltage'), labels, metrics.map(m => m.input_voltage), 'В');
+    } catch(e) {
+      console.error('Chart error:', e);
+    }
+  }
 }
 
 // ─── Dashboard ───

@@ -264,9 +264,9 @@ async def api_ups_scan(request: Request):
     return nut.scan_usb()
 
 @app.get("/api/ups/{name}/metrics")
-async def api_metrics(name: str, request: Request):
+async def api_metrics(name: str, request: Request, limit: int = 120):
     require_user(request)
-    return db.get_metrics(name, 120)
+    return db.get_metrics(name, min(limit, 1440))
 
 @app.get("/api/ups/{name}/commands")
 async def api_commands(name: str, request: Request):
