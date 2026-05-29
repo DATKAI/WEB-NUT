@@ -289,7 +289,7 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
           <div class="section-title" style="margin:0">Мониторинг клиентов</div>
           <button class="btn btn-gray btn-sm" onclick="loadMonitoredClients()">↻ Обновить</button>
         </div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Клиенты с установленной службой <b>NUT Monitor Service</b> (Windows). Обновляется каждые 30 сек.</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Windows: служба <b>NUT Monitor Service</b> &nbsp;|&nbsp; Linux: скрипт <b>nut-heartbeat</b>. Обновляется каждые 30 сек. Клиент пропадает если молчит более 5 мин.</p>
         <div id="monitored-clients-table">
           <div style="color:var(--muted);font-size:13px">Загрузка...</div>
         </div>
@@ -337,6 +337,14 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
             <div class="step-body">
               <div class="step-title">Проверить связь с сервером</div>
               <div class="code-block" id="cmd-linux-check">загрузка...<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-body">
+              <div class="step-title">Отображение в панели — установить heartbeat скрипт</div>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Отправляет статус ИБП в панель каждые 30 сек. После этого клиент появится в таблице «Мониторинг клиентов».</p>
+              <div class="code-block" id="cmd-linux-heartbeat">загрузка...<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
             </div>
           </div>
         </div>
@@ -1083,6 +1091,51 @@ NOTIFYFLAG LOWBATT SYSLOG+WALL
 EOF`;
   setCodeBlock('cmd-linux-upsmon', linuxUpsmon);
   setCodeBlock('cmd-linux-check', `upsc ${ups}@${ip}`);
+
+  // Linux heartbeat script
+  const heartbeat = `cat > /usr/local/bin/nut-heartbeat.sh << 'SCRIPT'
+#!/bin/bash
+UPS="${ups}"
+SERVER="${ip}"
+PANEL="http://${ip}:8000/api/clients/register"
+HOSTNAME=$(hostname)
+
+STATUS=$(upsc $UPS@$SERVER ups.status 2>/dev/null)
+BATTERY=$(upsc $UPS@$SERVER battery.charge 2>/dev/null)
+[ -z "$STATUS" ] && STATUS="OFFLINE"
+[ -z "$BATTERY" ] && BATTERY=-1
+
+curl -sf -X POST "$PANEL" \\
+  -H "Content-Type: application/json" \\
+  -d "{\\\"hostname\\\":\\\"$HOSTNAME\\\",\\\"ups\\\":\\\"$UPS\\\",\\\"status\\\":\\\"$STATUS\\\",\\\"battery\\\":$BATTERY}" >/dev/null
+SCRIPT
+chmod +x /usr/local/bin/nut-heartbeat.sh
+
+# Запуск каждые 30 сек через systemd timer
+cat > /etc/systemd/system/nut-heartbeat.service << 'EOF'
+[Unit]
+Description=NUT Monitor Heartbeat
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nut-heartbeat.sh
+EOF
+
+cat > /etc/systemd/system/nut-heartbeat.timer << 'EOF'
+[Unit]
+Description=NUT Monitor Heartbeat Timer
+
+[Timer]
+OnBootSec=10
+OnUnitActiveSec=30s
+
+[Install]
+WantedBy=timers.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now nut-heartbeat.timer`;
+  setCodeBlock('cmd-linux-heartbeat', heartbeat);
 
   // Windows PowerShell
   const ps = `# NUT Monitor Client — PowerShell
