@@ -67,6 +67,17 @@ def init_db():
             input_voltage REAL,
             runtime INTEGER
         );
+
+        CREATE TABLE IF NOT EXISTS monitored_clients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip TEXT NOT NULL,
+            hostname TEXT,
+            ups TEXT,
+            status TEXT,
+            battery INTEGER,
+            last_seen TEXT,
+            UNIQUE(ip)
+        );
     """)
     conn.commit()
 
@@ -238,6 +249,35 @@ def delete_nut_user(username):
     conn.execute("DELETE FROM nut_users WHERE username=?", (username,))
     conn.commit()
     conn.close()
+
+
+# --- Мониторинг клиентов ---
+def upsert_client(ip, hostname, ups, status, battery):
+    conn = get_conn()
+    conn.execute(
+        """INSERT INTO monitored_clients (ip, hostname, ups, status, battery, last_seen)
+           VALUES (?,?,?,?,?,?)
+           ON CONFLICT(ip) DO UPDATE SET
+               hostname=excluded.hostname, ups=excluded.ups,
+               status=excluded.status, battery=excluded.battery,
+               last_seen=excluded.last_seen""",
+        (ip, hostname, ups, status, battery, now())
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_monitored_clients(timeout_minutes=5):
+    conn = get_conn()
+    rows = conn.execute(
+        """SELECT ip, hostname, ups, status, battery, last_seen
+           FROM monitored_clients
+           WHERE datetime(last_seen) >= datetime('now', ?, 'localtime')
+           ORDER BY last_seen DESC""",
+        (f"-{timeout_minutes} minutes",)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 # --- События ---

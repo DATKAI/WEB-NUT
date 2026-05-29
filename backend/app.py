@@ -665,12 +665,14 @@ async def script_service_zip(request: Request):
     # ── nut-monitor.ps1 — the actual monitor, baked credentials, no here-string ──
     monitor_lines = [
         "# NUT Monitor — auto-generated, do not edit",
-        f'$Server   = "{ip}"',
-        "$Port     = 3493",
-        f'$UPS      = "{ups}"',
-        f'$Login    = "{user}"',
-        f'$Password = "{password}"',
-        '$Log      = "C:\\NUT-Monitor\\nut-monitor.log"',
+        f'$Server    = "{ip}"',
+        "$Port      = 3493",
+        f'$UPS       = "{ups}"',
+        f'$Login     = "{user}"',
+        f'$Password  = "{password}"',
+        f'$PanelUrl  = "http://{ip}:8000/api/clients/register"',
+        '$Hostname   = $env:COMPUTERNAME',
+        '$Log        = "C:\\NUT-Monitor\\nut-monitor.log"',
         "",
         "New-Item -ItemType Directory -Force -Path (Split-Path $Log) | Out-Null",
         "",
@@ -696,6 +698,13 @@ async def script_service_zip(request: Request):
         "    return $null",
         "}",
         "",
+        "function Send-Heartbeat($status, $battery) {",
+        "    try {",
+        '        $body = "{""hostname"":""$Hostname"",""ups"":""$UPS"",""status"":""$status"",""battery"":$battery}"',
+        "        Invoke-RestMethod -Uri $PanelUrl -Method POST -Body $body -ContentType 'application/json' -TimeoutSec 5 | Out-Null",
+        "    } catch { }",
+        "}",
+        "",
         'Write-Log "=== NUT Monitor started. Server: $Server  UPS: $UPS ==="',
         '$prevStatus = ""',
         "",
@@ -703,11 +712,14 @@ async def script_service_zip(request: Request):
         '    $status = Get-UpsVar "ups.status"',
         "    if ($null -eq $status) {",
         '        Write-Log "WARN: Cannot reach ${Server}:$Port"',
+        "        Send-Heartbeat 'OFFLINE' -1",
         "        Start-Sleep -Seconds 30",
         "        continue",
         "    }",
+        '    $charge = Get-UpsVar "battery.charge"',
+        '    $chargeInt = if ($charge) { [int]$charge } else { -1 }',
+        "    Send-Heartbeat $status $chargeInt",
         "    if ($status -ne $prevStatus) {",
-        '        $charge = Get-UpsVar "battery.charge"',
         '        Write-Log "Status: $prevStatus -> $status  (battery: $charge%)"',
         "        $prevStatus = $status",
         "    }",
@@ -854,6 +866,23 @@ async def script_service_zip(request: Request):
 
 
 # ─────────── Клиенты ───────────
+
+class ClientHeartbeat(BaseModel):
+    hostname: str = ""
+    ups: str = ""
+    status: str = ""
+    battery: int = -1
+
+@app.post("/api/clients/register")
+async def api_client_register(body: ClientHeartbeat, request: Request):
+    ip = request.headers.get("x-forwarded-for", request.client.host).split(",")[0].strip()
+    db.upsert_client(ip, body.hostname, body.ups, body.status, body.battery)
+    return {"ok": True}
+
+@app.get("/api/clients/monitored")
+async def api_clients_monitored(request: Request):
+    require_user(request)
+    return db.get_monitored_clients(timeout_minutes=5)
 
 @app.get("/api/clients")
 async def api_clients(request: Request):

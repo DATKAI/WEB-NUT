@@ -282,6 +282,17 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
         </div>
       </div>
 
+      <!-- Мониторинг клиентов -->
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="section-title" style="margin:0">Мониторинг клиентов</div>
+          <button class="btn btn-gray btn-sm" onclick="loadMonitoredClients()">↻ Обновить</button>
+        </div>
+        <div id="monitored-clients-table">
+          <div style="color:var(--muted);font-size:13px">Загрузка...</div>
+        </div>
+      </div>
+
       <div class="os-tabs">
         <div class="os-tab active" onclick="switchOs('linux',this)">🐧 Linux</div>
         <div class="os-tab" onclick="switchOs('windows',this)">🪟 Windows</div>
@@ -672,6 +683,8 @@ async function init() {
     loadNutServices();
     connectWs();
     updateClientInfo();
+    loadMonitoredClients();
+    setInterval(loadMonitoredClients, 30000);
   } catch {
     location.href = '/login';
   }
@@ -946,6 +959,55 @@ async function sendCmdDirect(ups, cmd) {
   closeModal('modal-confirm');
   const r = await api(`/api/ups/${ups}/command/${cmd}`, 'POST').catch(e => ({ ok: false, error: e.message }));
   toast(r.result || r.error || 'Выполнено', r.ok ? 'ok' : 'err');
+}
+
+// ─── Monitored clients table ───
+async function loadMonitoredClients() {
+  const el = document.getElementById('monitored-clients-table');
+  if (!el) return;
+  try {
+    const clients = await api('/api/clients/monitored');
+    if (!clients.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет активных клиентов. Клиенты появятся после установки NUT Monitor Service.</div>';
+      return;
+    }
+    const STATUS_COLOR = { OL:'#22c55e', OB:'#f59e0b', LB:'#ef4444', OFFLINE:'#6b7280' };
+    const rows = clients.map(c => {
+      const st = c.status || 'OFFLINE';
+      const color = Object.entries(STATUS_COLOR).find(([k]) => st.includes(k))?.[1] || '#6b7280';
+      const ago = c.last_seen ? timeSince(c.last_seen) : '—';
+      const bat = c.battery >= 0 ? `${c.battery}%` : '—';
+      return `<tr>
+        <td style="font-family:monospace;font-weight:600">${c.hostname || c.ip}</td>
+        <td style="font-family:monospace;color:var(--muted)">${c.ip}</td>
+        <td>${c.ups || '—'}</td>
+        <td><span style="color:${color};font-weight:600">${st}</span></td>
+        <td>${bat}</td>
+        <td style="color:var(--muted);font-size:12px">${ago}</td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:6px 8px">Хост</th>
+        <th style="text-align:left;padding:6px 8px">IP</th>
+        <th style="text-align:left;padding:6px 8px">ИБП</th>
+        <th style="text-align:left;padding:6px 8px">Статус</th>
+        <th style="text-align:left;padding:6px 8px">Батарея</th>
+        <th style="text-align:left;padding:6px 8px">Обновлено</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px">Ошибка загрузки</div>';
+  }
+}
+
+function timeSince(tsStr) {
+  const d = new Date(tsStr.replace(' ', 'T'));
+  const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (sec < 60) return `${sec}с назад`;
+  if (sec < 3600) return `${Math.floor(sec/60)}м назад`;
+  return `${Math.floor(sec/3600)}ч назад`;
 }
 
 // ─── Clients page ───
