@@ -179,15 +179,15 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 /* Client OS tabs */
 .os-tabs{display:flex;gap:8px;margin-bottom:16px;}
 .os-tab{padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;background:#1f2333;color:var(--muted);border:1px solid var(--border);}
-.os-tab.active{background:#1e3a5f;color:#60a5fa;border-color:#2563eb;}
+.os-tab.active{background:var(--nav-active);color:var(--nav-active-text);border-color:var(--accent);}
 .os-pane{display:none;}.os-pane.active{display:block;}
 .step{display:flex;gap:12px;margin-bottom:16px;}
-.step-num{width:26px;height:26px;border-radius:50%;background:#1e3a5f;color:#60a5fa;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--nav-active);color:var(--nav-active-text);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
 .step-body{flex:1;}
 .step-title{font-size:13px;font-weight:600;margin-bottom:6px;}
 
 /* Scan */
-.scan-item{background:#0f1117;border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.scan-item{background:var(--stat-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
 .scan-item-info h4{font-size:13px;font-weight:600;}
 .scan-item-info p{font-size:11px;color:var(--muted);margin-top:3px;}
 
