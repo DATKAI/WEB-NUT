@@ -20,28 +20,38 @@ def send_telegram(token: str, chat_id: str, message: str) -> bool:
 
 
 def send_ntfy(url: str, message: str, title: str = "NUT Monitor", priority: str = "default") -> bool:
-    """Отправка уведомления через ntfy.sh или свой ntfy сервер"""
+    """Отправка уведомления через ntfy.sh — с повторными попытками в фоне"""
     if not url:
         return False
-    try:
-        import ssl, subprocess, shutil
-        curl_bin = shutil.which("curl") or "/usr/bin/curl"
-        result = subprocess.run(
-            [curl_bin, "-sfL", "--max-time", "10",
-             "-X", "POST", url,
-             "-H", f"Title: {title}",
-             "-H", f"Priority: {priority}",
-             "-H", "Tags: zap",
-             "-H", "Content-Type: text/plain; charset=utf-8",
-             "-d", message],
-            capture_output=True, timeout=15
-        )
-        if result.returncode != 0:
-            print(f"[ntfy] curl error: {result.stderr.decode()[:200]}")
-        return result.returncode == 0
-    except Exception as e:
-        print(f"[ntfy] Ошибка: {e}")
-        return False
+
+    import subprocess, shutil, threading, time
+
+    curl_bin = shutil.which("curl") or "/usr/bin/curl"
+    cmd = [curl_bin, "-sfL", "--max-time", "15",
+           "-X", "POST", url,
+           "-H", f"Title: {title}",
+           "-H", f"Priority: {priority}",
+           "-H", "Tags: zap",
+           "-H", "Content-Type: text/plain; charset=utf-8",
+           "-d", message]
+
+    def _send_with_retry():
+        for attempt in range(1, 4):  # 3 попытки
+            try:
+                result = subprocess.run(cmd, capture_output=True, timeout=20)
+                if result.returncode == 0:
+                    print(f"[ntfy] OK (попытка {attempt})")
+                    return
+                print(f"[ntfy] попытка {attempt} неудачна: {result.stderr.decode()[:100]}")
+            except Exception as e:
+                print(f"[ntfy] попытка {attempt} ошибка: {e}")
+            if attempt < 3:
+                time.sleep(5)  # пауза 5 сек перед следующей попыткой
+        print("[ntfy] все попытки исчерпаны")
+
+    # Запускаем в фоновом потоке — не блокируем основной цикл
+    threading.Thread(target=_send_with_retry, daemon=True).start()
+    return True
 
 
 def send_email(host: str, port: int, user: str, password: str, to: str, subject: str, body: str) -> bool:
