@@ -24,16 +24,19 @@ def send_ntfy(url: str, message: str, title: str = "NUT Monitor", priority: str 
     if not url:
         return False
     try:
-        # Принудительно используем HTTP — HTTPS может зависать (TLS проблемы в РФ)
-        url = url.replace("https://ntfy.sh/", "http://ntfy.sh/")
-        data = message.encode("utf-8")
-        req = urllib.request.Request(url, data=data, method="POST")
-        req.add_header("Title", title)
-        req.add_header("Priority", priority)
-        req.add_header("Tags", "zap")
-        req.add_header("Content-Type", "text/plain; charset=utf-8")
-        with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status == 200
+        import ssl, subprocess
+        # Используем curl — он работает там где Python urllib зависает (TLS в РФ)
+        result = subprocess.run(
+            ["curl", "-sf", "--max-time", "10",
+             "-X", "POST", url,
+             "-H", f"Title: {title}",
+             "-H", f"Priority: {priority}",
+             "-H", "Tags: zap",
+             "-H", "Content-Type: text/plain; charset=utf-8",
+             "-d", message],
+            capture_output=True, timeout=15
+        )
+        return result.returncode == 0
     except Exception as e:
         print(f"[ntfy] Ошибка: {e}")
         return False
