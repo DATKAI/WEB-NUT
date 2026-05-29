@@ -502,14 +502,46 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="tabs" data-group="settings">
-        <div class="tab active" data-tab="s-tg">Telegram</div>
+        <div class="tab active" data-tab="s-ntfy">ntfy (без VPN)</div>
+        <div class="tab" data-tab="s-tg">Telegram</div>
         <div class="tab" data-tab="s-email">Email / SMTP</div>
         <div class="tab" data-tab="s-notify">Правила</div>
       </div>
-      <div class="tab-pane active" id="tab-s-tg">
+
+      <!-- ntfy -->
+      <div class="tab-pane active" id="tab-s-ntfy">
+        <div class="card">
+          <div class="section-title">ntfy — Push уведомления без VPN</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+            Бесплатный сервис push-уведомлений. Работает в России без VPN. Уведомления приходят на телефон мгновенно.
+          </p>
+          <div style="background:#1e3a5f;border:1px solid #2563eb;border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px">
+            <b style="color:#60a5fa">🚀 Быстрая настройка (2 минуты):</b><br><br>
+            <b style="color:#e0e0e0">1.</b> Установи приложение <b>ntfy</b>:
+            <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" style="color:#60a5fa">Android</a> /
+            <a href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" style="color:#60a5fa">iOS</a><br>
+            <b style="color:#e0e0e0">2.</b> Придумай уникальное название темы, например: <code style="color:#a5f3fc">nut-monitor-иванов2024</code><br>
+            <b style="color:#e0e0e0">3.</b> В приложении нажми <b>+</b> и подпишись на свою тему<br>
+            <b style="color:#e0e0e0">4.</b> Введи URL ниже и нажми Сохранить
+          </div>
+          <div class="form-grid" style="max-width:500px">
+            <div class="form-group full">
+              <label>ntfy URL (тема)</label>
+              <input id="ntfy_url" placeholder="https://ntfy.sh/моя-уникальная-тема">
+              <p style="font-size:11px;color:var(--muted);margin-top:4px">Формат: https://ntfy.sh/название-темы — придумай любое уникальное название</p>
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px">
+            <button class="btn btn-blue" onclick="saveSettings(['ntfy_url'])">Сохранить</button>
+            <button class="btn btn-gray" onclick="testNtfy()">📲 Отправить тест</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="tab-s-tg">
         <div class="card">
           <div class="section-title">Telegram уведомления</div>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Создай бота через <b>@BotFather</b>, получи токен. Chat ID можно узнать через <b>@userinfobot</b>.</p>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Создай бота через <b>@BotFather</b>, получи токен. Chat ID можно узнать через <b>@userinfobot</b>. Требуется доступ к api.telegram.org.</p>
           <div class="form-grid" style="max-width:500px">
             <div class="form-group full"><label>Bot Token</label><input id="tg_token" placeholder="123456789:AAFxxxxxxxx"></div>
             <div class="form-group full"><label>Chat ID (личный или группы)</label><input id="tg_chat_id" placeholder="-100123456789"></div>
@@ -1360,7 +1392,7 @@ async function deleteUser(id) {
 // ─── Settings ───
 async function loadSettings() {
   const s = await api('/api/settings').catch(() => ({}));
-  const fields = ['tg_token','tg_chat_id','smtp_host','smtp_port','smtp_user','smtp_password','smtp_to',
+  const fields = ['ntfy_url','tg_token','tg_chat_id','smtp_host','smtp_port','smtp_user','smtp_password','smtp_to',
                   'nut_admin_user','nut_admin_pass','low_batt_threshold','shutdown_delay','poll_interval'];
   fields.forEach(k => { const el = document.getElementById(k); if (el) el.value = s[k] || ''; });
   ['notify_onbatt','notify_lowbatt','notify_online'].forEach(k => {
@@ -1382,6 +1414,12 @@ async function saveSettings(keys) {
 
 async function saveNutSettings() {
   await saveSettings(['nut_admin_user','nut_admin_pass','low_batt_threshold','shutdown_delay','poll_interval']);
+}
+
+async function testNtfy() {
+  await saveSettings(['ntfy_url']);
+  const r = await api('/api/settings/test-ntfy', 'POST').catch(() => ({ ok: false }));
+  toast(r.ok ? '✓ ntfy: уведомление отправлено! Проверь телефон.' : '✗ Ошибка. Проверь URL темы', r.ok ? 'ok' : 'err');
 }
 
 async function testTg() {

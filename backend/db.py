@@ -90,6 +90,7 @@ def init_db():
         "smtp_user": "",
         "smtp_password": "",
         "smtp_to": "",
+        "ntfy_url": "",
         "notify_onbatt": "1",
         "notify_lowbatt": "1",
         "notify_online": "1",

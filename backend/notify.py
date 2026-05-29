@@ -19,6 +19,25 @@ def send_telegram(token: str, chat_id: str, message: str) -> bool:
         return False
 
 
+def send_ntfy(url: str, message: str, title: str = "NUT Monitor", priority: str = "default") -> bool:
+    """Отправка уведомления через ntfy.sh или свой ntfy сервер"""
+    if not url:
+        return False
+    try:
+        # url например: https://ntfy.sh/my-nut-monitor-topic
+        data = message.encode("utf-8")
+        req = urllib.request.Request(url, data=data, method="POST")
+        req.add_header("Title", title)
+        req.add_header("Priority", priority)
+        req.add_header("Tags", "zap")
+        req.add_header("Content-Type", "text/plain; charset=utf-8")
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status == 200
+    except Exception as e:
+        print(f"[ntfy] Ошибка: {e}")
+        return False
+
+
 def send_email(host: str, port: int, user: str, password: str, to: str, subject: str, body: str) -> bool:
     if not host or not user or not to:
         return False
@@ -52,11 +71,22 @@ def notify_all(settings: dict, ups_name: str, status: str, message: str):
     </div>
     """
     tg_msg = f"⚡ <b>NUT Monitor</b>\nUPS: <b>{ups_name}</b>\nСтатус: <b>{status}</b>\n{message}"
+    ntfy_msg = f"UPS: {ups_name} | Статус: {status}\n{message}"
+
+    # Определяем приоритет ntfy по статусу
+    ntfy_priority = "urgent" if "LB" in status or "FSD" in status else \
+                    "high"   if "OB" in status else "default"
 
     send_telegram(
         settings.get("tg_token", ""),
         settings.get("tg_chat_id", ""),
         tg_msg
+    )
+    send_ntfy(
+        settings.get("ntfy_url", ""),
+        ntfy_msg,
+        title=f"NUT Monitor — {ups_name}",
+        priority=ntfy_priority
     )
     send_email(
         settings.get("smtp_host", ""),
@@ -71,6 +101,11 @@ def notify_all(settings: dict, ups_name: str, status: str, message: str):
 
 def test_telegram(token: str, chat_id: str) -> bool:
     return send_telegram(token, chat_id, "✅ <b>NUT Monitor</b>\nTelegram уведомления работают!")
+
+
+def test_ntfy(url: str) -> bool:
+    return send_ntfy(url, "NUT Monitor: уведомления работают! ✅",
+                     title="NUT Monitor — Тест", priority="default")
 
 
 def test_email(host, port, user, password, to) -> bool:

@@ -293,6 +293,13 @@ async def api_test_tg(request: Request):
     ok = notify.test_telegram(token, chat_id)
     return {"ok": ok}
 
+@app.post("/api/settings/test-ntfy")
+async def api_test_ntfy(request: Request):
+    require_admin(request)
+    url = db.get_setting("ntfy_url")
+    ok = notify.test_ntfy(url)
+    return {"ok": ok}
+
 @app.post("/api/settings/test-email")
 async def api_test_email(request: Request):
     require_admin(request)
