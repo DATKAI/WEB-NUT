@@ -232,9 +232,11 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 </aside>
 
 <div class="main">
-  <div class="topbar">
+  <div class="topbar" style="flex-wrap:wrap;gap:8px">
     <span class="topbar-title" id="page-title">Дашборд</span>
-    <div style="display:flex;align-items:center;gap:16px">
+    <!-- Статус-бар -->
+    <div id="status-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;justify-content:center;font-size:12px"></div>
+    <div style="display:flex;align-items:center;gap:12px">
       <button id="theme-btn" onclick="toggleTheme()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:16px;color:var(--muted);transition:all .2s" title="Сменить тему">🌙</button>
       <div class="conn-dot">
         <div class="dot live" id="ws-dot"></div>
@@ -730,6 +732,43 @@ let slavePassVisible = false;
 let pendingAction = null;
 let ws = null;
 
+// ─── Status bar ───
+function updateStatusBar(upsData, clientsCount, nutStatus) {
+  const bar = document.getElementById('status-bar');
+  if (!bar) return;
+  let parts = [];
+
+  // UPS статусы
+  if (upsData) {
+    Object.entries(upsData).forEach(([name, info]) => {
+      if (!info.online) {
+        parts.push(`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--stat-bg);border:1px solid var(--border);border-radius:6px;padding:3px 8px">⛔ <b>${name}</b> нет связи</span>`);
+        return;
+      }
+      const st = info.status || '';
+      let icon = '✅', color = 'var(--green)';
+      if (st.includes('LB'))       { icon = '🔴'; color = 'var(--red)'; }
+      else if (st.includes('OB'))  { icon = '⚠️'; color = 'var(--yellow)'; }
+      else if (st.includes('FSD')) { icon = '🔴'; color = 'var(--red)'; }
+      const charge = info.charge != null ? ` ${Math.round(info.charge)}%` : '';
+      parts.push(`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--stat-bg);border:1px solid var(--border);border-radius:6px;padding:3px 8px">${icon} <b>${name}</b><span style="color:${color}">${charge}</span></span>`);
+    });
+  }
+
+  // Клиенты онлайн
+  if (clientsCount != null) {
+    parts.push(`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--stat-bg);border:1px solid var(--border);border-radius:6px;padding:3px 8px">🖥️ <b>${clientsCount}</b> клиентов</span>`);
+  }
+
+  // NUT сервер
+  if (nutStatus) {
+    const ok = nutStatus['nut-server'] === 'active';
+    parts.push(`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--stat-bg);border:1px solid var(--border);border-radius:6px;padding:3px 8px"><span style="color:${ok ? 'var(--green)' : 'var(--red)'}">●</span> NUT ${ok ? 'активен' : 'неактивен'}</span>`);
+  }
+
+  bar.innerHTML = parts.join('');
+}
+
 // ─── Theme ───
 function toggleTheme() {
   const isLight = document.documentElement.classList.toggle('light');
@@ -793,7 +832,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
     if (page === 'events') loadEvents();
     if (page === 'nut') loadNutServices();
     if (page === 'devices') loadDevicesTable();
-    if (page === 'clients') updateClientCmds();
+    if (page === 'clients') { updateClientCmds(); loadMonitoredClients(); }
   });
 });
 
@@ -832,7 +871,13 @@ function connectWs() {
     const data = JSON.parse(e.data);
     if (data.ups) { currentUpsData = data.ups; renderDashboard(data.ups); checkPushNotify(data.ups); }
     if (data.events) renderDashEvents(data.events);
-    if (data.nut_status) renderNutStatus(data.nut_status);
+    if (data.nut_status) {
+      renderNutStatus(data.nut_status);
+      // Обновляем статус-бар с текущими данными клиентов
+      const clients = document.getElementById('monitored-clients-table-dash');
+      const rows = clients ? clients.querySelectorAll('tbody tr').length : null;
+      updateStatusBar(currentUpsData, rows || window._clientsCount || 0, data.nut_status);
+    }
   };
   ws.onclose = () => {
     document.getElementById('ws-dot').className = 'dot off';
@@ -1105,6 +1150,8 @@ async function loadMonitoredClients() {
       </table>`;
     }
     targets.forEach(el => el.innerHTML = html);
+    window._clientsCount = clients.length;
+    updateStatusBar(currentUpsData, clients.length, null);
   } catch(e) {
     targets.forEach(el => el.innerHTML = '<div style="color:var(--muted);font-size:13px">Ошибка загрузки</div>');
   }
