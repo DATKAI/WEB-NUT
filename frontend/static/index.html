@@ -9,9 +9,22 @@
   --bg:#0f1117; --card:#1a1d27; --border:#2a2d3e;
   --text:#e0e0e0; --muted:#6b7280; --accent:#2563eb;
   --green:#22c55e; --yellow:#f59e0b; --red:#ef4444; --purple:#a78bfa;
+  --nav-hover:#22263a; --nav-active:#1e3a5f; --nav-active-text:#60a5fa;
+  --stat-bg:#0f1117; --table-hover:#1f2333; --table-border:#1f2333;
+  --code-bg:#0f1117; --code-color:#a5f3fc;
+  --input-bg:#0f1117;
+}
+html.light {
+  --bg:#f1f5f9; --card:#ffffff; --border:#e2e8f0;
+  --text:#1e293b; --muted:#64748b; --accent:#2563eb;
+  --green:#16a34a; --yellow:#d97706; --red:#dc2626; --purple:#7c3aed;
+  --nav-hover:#f1f5f9; --nav-active:#dbeafe; --nav-active-text:#1d4ed8;
+  --stat-bg:#f8fafc; --table-hover:#f8fafc; --table-border:#e2e8f0;
+  --code-bg:#f8fafc; --code-color:#0369a1;
+  --input-bg:#f8fafc;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;transition:background .2s,color .2s;}
 
 /* Sidebar */
 .sidebar{width:220px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
@@ -20,8 +33,8 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);di
 .sidebar-logo p{font-size:11px;color:var(--muted);margin-top:2px;}
 .nav{flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--muted);transition:all .15s;user-select:none;}
-.nav-item:hover{background:#22263a;color:var(--text);}
-.nav-item.active{background:#1e3a5f;color:#60a5fa;font-weight:600;}
+.nav-item:hover{background:var(--nav-hover);color:var(--text);}
+.nav-item.active{background:var(--nav-active);color:var(--nav-active-text);font-weight:600;}
 .nav-item .icon{font-size:15px;width:20px;text-align:center;}
 .sidebar-footer{padding:12px 8px;border-top:1px solid var(--border);}
 .user-info{padding:6px 12px;font-size:12px;color:var(--muted);margin-bottom:4px;}
@@ -65,20 +78,25 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);di
 .ups-sub{font-size:11px;color:var(--muted);margin-top:3px;}
 .badges{display:flex;gap:5px;flex-wrap:wrap;}
 .badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
-.b-ol{background:#14532d;color:var(--green);}
-.b-ob{background:#451a03;color:var(--yellow);}
-.b-lb{background:#450a0a;color:var(--red);}
-.b-chrg{background:#1e3a5f;color:#60a5fa;}
-.b-off{background:#1f2937;color:var(--muted);}
+.b-ol{background:#dcfce7;color:#15803d;}
+.b-ob{background:#fef3c7;color:#b45309;}
+.b-lb{background:#fee2e2;color:#b91c1c;}
+.b-chrg{background:#dbeafe;color:#1d4ed8;}
+.b-off{background:#f1f5f9;color:var(--muted);}
+html:not(.light) .b-ol{background:#14532d;color:var(--green);}
+html:not(.light) .b-ob{background:#451a03;color:var(--yellow);}
+html:not(.light) .b-lb{background:#450a0a;color:var(--red);}
+html:not(.light) .b-chrg{background:#1e3a5f;color:#60a5fa;}
+html:not(.light) .b-off{background:#1f2937;color:var(--muted);}
 .bar-wrap{margin-bottom:12px;}
 .bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px;}
-.bar-track{background:#2a2d3e;border-radius:6px;height:8px;overflow:hidden;}
+.bar-track{background:var(--border);border-radius:6px;height:8px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:6px;transition:width .6s;}
 .bar-green{background:linear-gradient(90deg,#16a34a,#22c55e);}
 .bar-yellow{background:linear-gradient(90deg,#d97706,#f59e0b);}
 .bar-red{background:linear-gradient(90deg,#dc2626,#ef4444);}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
-.stat{background:#0f1117;border-radius:8px;padding:10px 12px;}
+.stat{background:var(--stat-bg);border-radius:8px;padding:10px 12px;}
 .stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
 .stat-v{font-size:17px;font-weight:600;}
 .stat-u{font-size:10px;color:var(--muted);margin-left:2px;}
@@ -90,7 +108,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);di
 .btn-blue{background:var(--accent);color:#fff;}
 .btn-yellow{background:#d97706;color:#fff;}
 .btn-red{background:#dc2626;color:#fff;}
-.btn-gray{background:#374151;color:var(--text);}
+.btn-gray{background:#374151;color:#fff;}
 .btn-green{background:#16a34a;color:#fff;}
 .btn-sm{padding:5px 10px;font-size:11px;}
 .btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted);}
@@ -99,9 +117,9 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);di
 /* Table */
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th{text-align:left;padding:8px 12px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);}
-td{padding:10px 12px;border-bottom:1px solid #1f2333;}
+td{padding:10px 12px;border-bottom:1px solid var(--table-border);}
 tr:last-child td{border-bottom:none;}
-tr:hover td{background:#1f2333;}
+tr:hover td{background:var(--table-hover);}
 
 /* Events */
 .ev-row{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
@@ -115,14 +133,14 @@ tr:hover td{background:#1f2333;}
 .form-group{display:flex;flex-direction:column;gap:5px;}
 .form-group.full{grid-column:1/-1;}
 label{font-size:12px;color:var(--muted);}
-input,select,textarea{padding:9px 12px;background:#0f1117;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;width:100%;}
+input,select,textarea{padding:9px 12px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;width:100%;}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);}
-select option{background:#1a1d27;}
+select option{background:var(--card);}
 textarea{resize:vertical;font-family:monospace;font-size:12px;}
 
 /* Code block */
-.code-block{background:#0f1117;border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-family:'Courier New',monospace;font-size:12px;color:#a5f3fc;white-space:pre-wrap;word-break:break-all;position:relative;}
-.copy-btn{position:absolute;top:8px;right:8px;padding:4px 10px;background:#374151;border:none;border-radius:5px;color:var(--muted);font-size:11px;cursor:pointer;}
+.code-block{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-family:'Courier New',monospace;font-size:12px;color:var(--code-color);white-space:pre-wrap;word-break:break-all;position:relative;}
+.copy-btn{position:absolute;top:8px;right:8px;padding:4px 10px;background:#374151;border:none;border-radius:5px;color:#fff;font-size:11px;cursor:pointer;}
 .copy-btn:hover{background:#4b5563;color:#fff;}
 
 /* Modal */
@@ -203,9 +221,12 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 <div class="main">
   <div class="topbar">
     <span class="topbar-title" id="page-title">Дашборд</span>
-    <div class="conn-dot">
-      <div class="dot live" id="ws-dot"></div>
-      <span id="ws-status">Подключение...</span>
+    <div style="display:flex;align-items:center;gap:16px">
+      <button id="theme-btn" onclick="toggleTheme()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:16px;color:var(--muted);transition:all .2s" title="Сменить тему">🌙</button>
+      <div class="conn-dot">
+        <div class="dot live" id="ws-dot"></div>
+        <span id="ws-status">Подключение...</span>
+      </div>
     </div>
   </div>
 
@@ -698,6 +719,22 @@ let slavePass = '•••••••';
 let slavePassVisible = false;
 let pendingAction = null;
 let ws = null;
+
+// ─── Theme ───
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  document.getElementById('theme-btn').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+
+function applyTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = '☀️';
+  }
+}
 
 // ─── Init ───
 async function init() {
@@ -1537,6 +1574,7 @@ function statusBadges(status) {
   }).join(' ');
 }
 
+applyTheme();
 init();
 </script>
 </body>
