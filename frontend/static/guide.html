@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NUT Monitor — Руководство пользователя</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #1f2333;
+  --border: #2a2d3e;
+  --text: #e0e0e0;
+  --muted: #6b7280;
+  --blue: #2563eb;
+  --blue-light: #60a5fa;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --purple: #a78bfa;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ── NAV ── */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,17,23,0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; align-items: center; gap: 32px; height: 56px;
+}
+.nav-logo { font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+.nav-logo span { font-size: 22px; }
+.nav-links { display: flex; gap: 4px; margin-left: auto; }
+.nav-links a {
+  color: var(--muted); text-decoration: none; font-size: 13px;
+  padding: 6px 12px; border-radius: 6px; transition: all 0.2s;
+}
+.nav-links a:hover { color: var(--text); background: var(--surface2); }
+
+/* ── HERO ── */
+.hero {
+  text-align: center;
+  padding: 80px 32px 60px;
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37,99,235,0.15), transparent);
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(37,99,235,0.15); border: 1px solid rgba(37,99,235,0.3);
+  color: var(--blue-light); font-size: 12px; font-weight: 600;
+  padding: 4px 12px; border-radius: 100px; margin-bottom: 24px;
+}
+.hero h1 { font-size: 52px; font-weight: 800; color: #fff; margin-bottom: 16px; letter-spacing: -1px; }
+.hero h1 span { color: var(--blue-light); }
+.hero p { font-size: 18px; color: var(--muted); max-width: 600px; margin: 0 auto 40px; }
+.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--blue); color: #fff; padding: 12px 28px;
+  border-radius: 10px; font-size: 15px; font-weight: 600;
+  text-decoration: none; transition: background 0.2s;
+}
+.btn-primary:hover { background: #1d4ed8; }
+.btn-secondary {
+  background: var(--surface2); color: var(--text); padding: 12px 28px;
+  border-radius: 10px; font-size: 15px; font-weight: 600;
+  text-decoration: none; border: 1px solid var(--border); transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--blue-light); color: var(--blue-light); }
+
+/* ── FEATURES GRID ── */
+.section { padding: 60px 32px; max-width: 1100px; margin: 0 auto; }
+.section-label { font-size: 12px; font-weight: 700; color: var(--blue-light); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+.section-title { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+.section-sub { font-size: 16px; color: var(--muted); margin-bottom: 40px; }
+
+.features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.feature-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.feature-card:hover { border-color: var(--blue); transform: translateY(-2px); }
+.feature-icon { font-size: 32px; margin-bottom: 12px; }
+.feature-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.feature-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+/* ── DASHBOARD MOCK ── */
+.mock-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden; margin: 40px 0;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.mock-titlebar {
+  background: var(--surface2); padding: 12px 16px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.mock-dot { width: 12px; height: 12px; border-radius: 50%; }
+.mock-url {
+  flex: 1; background: var(--bg); border-radius: 6px;
+  padding: 4px 12px; font-size: 12px; color: var(--muted);
+  margin: 0 8px; font-family: monospace;
+}
+.mock-body { display: flex; height: 460px; }
+.mock-sidebar {
+  width: 200px; background: #13151f; border-right: 1px solid var(--border);
+  padding: 16px 0; flex-shrink: 0;
+}
+.mock-logo { padding: 0 16px 20px; }
+.mock-logo-title { font-size: 14px; font-weight: 700; color: #fff; }
+.mock-logo-sub { font-size: 10px; color: var(--muted); }
+.mock-nav-item {
+  padding: 8px 16px; font-size: 12px; color: var(--muted);
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  transition: all 0.15s;
+}
+.mock-nav-item:hover, .mock-nav-item.active {
+  background: rgba(37,99,235,0.12); color: var(--blue-light);
+  border-right: 2px solid var(--blue);
+}
+.mock-content { flex: 1; padding: 20px; overflow: hidden; }
+.mock-ups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.mock-ups-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px;
+}
+.mock-ups-name { font-size: 11px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.mock-ups-model { font-size: 10px; color: var(--muted); margin-bottom: 10px; }
+.mock-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600; padding: 2px 8px;
+  border-radius: 100px; margin-bottom: 8px;
+}
+.badge-ol { background: rgba(34,197,94,0.15); color: #22c55e; }
+.badge-chrg { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.badge-ob { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.mock-bar-wrap { margin-bottom: 6px; }
+.mock-bar-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+.mock-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.mock-bar-fill { height: 100%; border-radius: 3px; }
+.mock-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+.mock-stat { background: var(--bg); border-radius: 6px; padding: 6px 8px; }
+.mock-stat-l { font-size: 9px; color: var(--muted); }
+.mock-stat-v { font-size: 11px; font-weight: 700; color: #fff; }
+.mock-clients {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px;
+}
+.mock-clients-title { font-size: 11px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.mock-client-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 10px;
+}
+.mock-client-row:last-child { border-bottom: none; }
+
+/* ── GUIDE STEPS ── */
+.guide-section { max-width: 800px; margin: 0 auto; padding: 20px 32px 60px; }
+.guide-section h2 { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.guide-section .sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; }
+
+.step-list { display: flex; flex-direction: column; gap: 0; }
+.step-item { display: flex; gap: 20px; position: relative; }
+.step-item:not(:last-child) .step-line::after {
+  content: ''; position: absolute;
+  left: 19px; top: 44px; bottom: 0; width: 2px;
+  background: var(--border);
+}
+.step-left { display: flex; flex-direction: column; align-items: center; width: 40px; flex-shrink: 0; }
+.step-num {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--blue); color: #fff;
+  font-size: 15px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+.step-line { flex: 1; width: 2px; background: var(--border); margin: 4px 0; }
+.step-body { padding-bottom: 32px; flex: 1; }
+.step-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px; margin-top: 8px; }
+.step-desc { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+.code {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 16px;
+  font-family: 'Consolas', monospace; font-size: 13px;
+  color: #a5f3fc; overflow-x: auto; margin-bottom: 8px;
+}
+.tip {
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 8px; padding: 10px 14px;
+  font-size: 13px; color: #fcd34d; margin-top: 8px;
+  display: flex; gap: 8px;
+}
+.info {
+  background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2);
+  border-radius: 8px; padding: 10px 14px;
+  font-size: 13px; color: var(--blue-light); margin-top: 8px;
+  display: flex; gap: 8px;
+}
+
+/* ── STATUS TABLE ── */
+.status-table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 20px 0; }
+.status-table th {
+  text-align: left; padding: 10px 14px;
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 1px solid var(--border);
+}
+.status-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.status-table tr:last-child td { border-bottom: none; }
+.s-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700; padding: 3px 10px;
+  border-radius: 100px;
+}
+
+/* ── FAQ ── */
+.faq { max-width: 800px; margin: 0 auto; padding: 0 32px 80px; }
+.faq h2 { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 32px; }
+.faq-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 12px; overflow: hidden;
+}
+.faq-q {
+  padding: 16px 20px; font-size: 15px; font-weight: 600; color: #fff;
+  cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  user-select: none;
+}
+.faq-q:hover { background: var(--surface2); }
+.faq-a {
+  padding: 0 20px; max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s;
+  font-size: 14px; color: var(--muted); line-height: 1.7;
+}
+.faq-a.open { max-height: 400px; padding: 0 20px 16px; }
+.faq-arrow { transition: transform 0.3s; font-size: 12px; }
+.faq-arrow.open { transform: rotate(180deg); }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px; text-align: center;
+  font-size: 13px; color: var(--muted);
+}
+footer a { color: var(--blue-light); text-decoration: none; }
+
+/* ── SCROLL ── */
+html { scroll-behavior: smooth; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+@media (max-width: 700px) {
+  .hero h1 { font-size: 32px; }
+  .mock-body { flex-direction: column; height: auto; }
+  .mock-sidebar { width: 100%; height: auto; display: flex; flex-wrap: wrap; padding: 8px; }
+  .mock-ups-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo"><span>⚡</span> NUT Monitor</div>
+  <div class="nav-links">
+    <a href="#features">Возможности</a>
+    <a href="#dashboard">Интерфейс</a>
+    <a href="#guide">Инструкция</a>
+    <a href="#statuses">Статусы</a>
+    <a href="#faq">FAQ</a>
+    <a href="/" style="background:var(--blue);color:#fff;padding:6px 14px;border-radius:8px;font-weight:600">Открыть панель</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">⚡ Network UPS Tools Web Panel</div>
+  <h1>Мониторинг ИБП<br><span>в реальном времени</span></h1>
+  <p>Веб-панель управления для NUT сервера. Контролируйте все источники бесперебойного питания из одного места — без командной строки.</p>
+  <div class="hero-btns">
+    <a href="/" class="btn-primary">🚀 Открыть панель</a>
+    <a href="#guide" class="btn-secondary">📖 Инструкция</a>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section" id="features">
+  <div class="section-label">Возможности</div>
+  <div class="section-title">Всё необходимое для мониторинга ИБП</div>
+  <div class="section-sub">Замена ручному управлению через командную строку — управляйте всем через удобный веб-интерфейс</div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Дашборд в реальном времени</div>
+      <div class="feature-desc">Заряд батареи, нагрузка, напряжение, температура — обновляется каждые 3 секунды через WebSocket</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔌</div>
+      <div class="feature-title">Несколько ИБП</div>
+      <div class="feature-desc">Поддержка нескольких устройств одновременно. Каждый ИБП — отдельная карточка с полной информацией</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🖥️</div>
+      <div class="feature-title">Мониторинг клиентов</div>
+      <div class="feature-desc">Видите все подключённые серверы — Windows (NUT Monitor Service) и Linux (nut-heartbeat). Статус, батарея, время обновления</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔔</div>
+      <div class="feature-title">Уведомления</div>
+      <div class="feature-desc">Telegram и Email при переходе на батарею, низком заряде и восстановлении питания</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Управление ИБП</div>
+      <div class="feature-desc">Тест батареи, включение/выключение звука, управление нагрузкой — прямо из браузера</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛡️</div>
+      <div class="feature-title">Безопасность</div>
+      <div class="feature-desc">Авторизация с ролями (admin / viewer). Опасные команды требуют подтверждения</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <div class="feature-title">Журнал событий</div>
+      <div class="feature-desc">История всех событий: смена статуса, выполненные команды, уведомления</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🪟</div>
+      <div class="feature-title">Автоустановка клиентов</div>
+      <div class="feature-desc">Готовые скрипты для Windows (служба SYSTEM) и Linux (systemd timer) — с уже прописанными IP и паролями</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚙️</div>
+      <div class="feature-title">Управление конфигом NUT</div>
+      <div class="feature-desc">Добавление/удаление ИБП, управление пользователями NUT, применение конфига — без редактирования файлов</div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD MOCK -->
+<div class="section" id="dashboard" style="padding-top:0">
+  <div class="section-label">Интерфейс</div>
+  <div class="section-title">Всё видно с первого взгляда</div>
+  <div class="section-sub">Дашборд показывает состояние всех ИБП и клиентов в режиме реального времени</div>
+
+  <div class="mock-wrap">
+    <div class="mock-titlebar">
+      <div class="mock-dot" style="background:#ef4444"></div>
+      <div class="mock-dot" style="background:#f59e0b"></div>
+      <div class="mock-dot" style="background:#22c55e"></div>
+      <div class="mock-url">http://192.168.10.3:8000</div>
+      <span style="font-size:11px;color:var(--green)">● Онлайн</span>
+    </div>
+    <div class="mock-body">
+      <div class="mock-sidebar">
+        <div class="mock-logo">
+          <div style="font-size:16px;margin-bottom:2px">⚡ <span class="mock-logo-title">NUT Monitor</span></div>
+          <div class="mock-logo-sub">UPS Management Panel</div>
+        </div>
+        <div class="mock-nav-item active">📊 Дашборд</div>
+        <div class="mock-nav-item">🔌 Устройства</div>
+        <div class="mock-nav-item">🖥️ Клиенты</div>
+        <div class="mock-nav-item">📋 События</div>
+        <div class="mock-nav-item">⚙️ NUT Сервер</div>
+        <div class="mock-nav-item">👤 Пользователи</div>
+        <div class="mock-nav-item">🔔 Уведомления</div>
+        <div style="margin-top:auto;padding:16px;font-size:10px;color:var(--muted)">admin (admin)</div>
+      </div>
+      <div class="mock-content">
+        <div class="mock-ups-grid">
+          <!-- UPS 1 -->
+          <div class="mock-ups-card">
+            <div class="mock-ups-name">ippon</div>
+            <div class="mock-ups-model">Ippon Innova G2 Euro 2000</div>
+            <div>
+              <span class="mock-badge badge-ol">✅ Сеть</span>
+              <span class="mock-badge badge-chrg">⚡ Заряжается</span>
+            </div>
+            <div class="mock-bar-wrap">
+              <div class="mock-bar-label"><span>Заряд</span><span>100%</span></div>
+              <div class="mock-bar"><div class="mock-bar-fill" style="width:100%;background:#22c55e"></div></div>
+            </div>
+            <div class="mock-bar-wrap">
+              <div class="mock-bar-label"><span>Нагрузка</span><span>23%</span></div>
+              <div class="mock-bar"><div class="mock-bar-fill" style="width:23%;background:#60a5fa"></div></div>
+            </div>
+            <div class="mock-stats">
+              <div class="mock-stat"><div class="mock-stat-l">Вход</div><div class="mock-stat-v">222В</div></div>
+              <div class="mock-stat"><div class="mock-stat-l">Выход</div><div class="mock-stat-v">219В</div></div>
+              <div class="mock-stat"><div class="mock-stat-l">Частота</div><div class="mock-stat-v">50Гц</div></div>
+            </div>
+            <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
+              <button style="font-size:9px;padding:3px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--muted);cursor:pointer">🔋 Стоп тест</button>
+              <button style="font-size:9px;padding:3px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--muted);cursor:pointer">🔔 Звук</button>
+              <button style="font-size:9px;padding:3px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--muted);cursor:pointer">⚡ Все команды</button>
+            </div>
+          </div>
+          <!-- UPS 2 -->
+          <div class="mock-ups-card">
+            <div class="mock-ups-name">powercom</div>
+            <div class="mock-ups-model">Powercom SPT-2000-II</div>
+            <div>
+              <span class="mock-badge badge-ol">✅ Сеть</span>
+              <span class="mock-badge badge-chrg">⚡ Заряжается</span>
+            </div>
+            <div class="mock-bar-wrap">
+              <div class="mock-bar-label"><span>Заряд</span><span>100%</span></div>
+              <div class="mock-bar"><div class="mock-bar-fill" style="width:100%;background:#22c55e"></div></div>
+            </div>
+            <div class="mock-bar-wrap">
+              <div class="mock-bar-label"><span>Нагрузка</span><span>4%</span></div>
+              <div class="mock-bar"><div class="mock-bar-fill" style="width:4%;background:#60a5fa"></div></div>
+            </div>
+            <div class="mock-stats">
+              <div class="mock-stat"><div class="mock-stat-l">Вход</div><div class="mock-stat-v">234В</div></div>
+              <div class="mock-stat"><div class="mock-stat-l">Темп. АКБ</div><div class="mock-stat-v">35°C</div></div>
+              <div class="mock-stat"><div class="mock-stat-l">Beeper</div><div class="mock-stat-v">off</div></div>
+            </div>
+            <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
+              <button style="font-size:9px;padding:3px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--muted);cursor:pointer">🔋 Стоп тест</button>
+              <button style="font-size:9px;padding:3px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--muted);cursor:pointer">🔔 Звук</button>
+              <button style="font-size:9px;padding:3px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--muted);cursor:pointer">⚡ Все команды</button>
+            </div>
+          </div>
+        </div>
+        <!-- Clients -->
+        <div class="mock-clients">
+          <div class="mock-clients-title">🖥️ Клиенты (4)</div>
+          <div class="mock-client-row">
+            <span style="font-weight:700">TERMZPK</span>
+            <span style="color:var(--muted)">192.168.10.4</span>
+            <span style="color:#22c55e;font-size:9px">✅ Сеть</span>
+            <span style="color:var(--muted)">100%</span>
+            <span style="color:var(--muted)">15с назад</span>
+          </div>
+          <div class="mock-client-row">
+            <span style="font-weight:700">SERVERFSSP</span>
+            <span style="color:var(--muted)">192.168.10.6</span>
+            <span style="color:#22c55e;font-size:9px">✅ Сеть</span>
+            <span style="color:var(--muted)">100%</span>
+            <span style="color:var(--muted)">22с назад</span>
+          </div>
+          <div class="mock-client-row">
+            <span style="font-weight:700">PAS3</span>
+            <span style="color:var(--muted)">192.168.10.7</span>
+            <span style="color:#22c55e;font-size:9px">✅ Сеть</span>
+            <span style="color:var(--muted)">100%</span>
+            <span style="color:var(--muted)">28с назад</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GUIDE -->
+<div class="guide-section" id="guide">
+  <div class="section-label" style="text-align:center">Инструкция</div>
+  <h2 style="text-align:center">Как пользоваться панелью</h2>
+  <p class="sub" style="text-align:center">Пошаговое руководство для начала работы</p>
+
+  <div class="step-list">
+
+    <!-- Step 1 -->
+    <div class="step-item">
+      <div class="step-left">
+        <div class="step-num">1</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Вход в систему</div>
+        <div class="step-desc">Откройте браузер и перейдите по адресу панели. Введите логин и пароль.</div>
+        <div class="code">http://192.168.10.3:8000</div>
+        <div class="info">ℹ️ Логин по умолчанию: <strong>admin</strong> / пароль задаётся при установке и хранится в файле <code>/opt/nut-monitor/.env</code></div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step-item">
+      <div class="step-left">
+        <div class="step-num">2</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Дашборд — главная страница</div>
+        <div class="step-desc">После входа вы попадаете на дашборд. Здесь отображаются:</div>
+        <ul style="font-size:14px;color:var(--muted);margin:8px 0 8px 20px;line-height:2">
+          <li>Карточки всех ИБП с зарядом, нагрузкой и напряжением</li>
+          <li>Кнопки быстрых команд: тест батареи, включение/выключение звука</li>
+          <li>Таблица подключённых клиентов с их статусом</li>
+          <li>Последние события</li>
+        </ul>
+        <div class="tip">⚠️ Данные обновляются автоматически каждые 3 секунды — обновлять страницу не нужно</div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step-item">
+      <div class="step-left">
+        <div class="step-num">3</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Подключение Windows клиентов</div>
+        <div class="step-desc">Перейдите в раздел <strong>Клиенты → Windows</strong>. Для подключения Windows серверов есть два варианта:</div>
+        <ul style="font-size:14px;color:var(--muted);margin:8px 0 12px 20px;line-height:2">
+          <li><strong>WinNUT-Client</strong> — GUI программа с иконкой в трее</li>
+          <li><strong>NUT Monitor Service</strong> — служба Windows (работает без входа пользователя)</li>
+        </ul>
+        <div class="step-desc">Для службы (рекомендуется):</div>
+        <div class="code">1. Скачайте nut-service-install.zip из панели
+2. Распакуйте все файлы в одну папку
+3. Запустите nut-service-install.bat от администратора
+4. Скрипт скачает WinSW и установит службу автоматически</div>
+        <div class="info">ℹ️ Служба запускается от имени SYSTEM — работает даже если никто не вошёл в Windows. Лог: <code>C:\NUT-Monitor\nut-monitor.log</code></div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step-item">
+      <div class="step-left">
+        <div class="step-num">4</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Подключение Linux клиентов</div>
+        <div class="step-desc">Перейдите в раздел <strong>Клиенты → Linux</strong>. Скопируйте и выполните команды по порядку:</div>
+        <div class="code">1. apt install -y nut-client
+2. Создать /etc/nut/nut.conf  (MODE=netclient)
+3. Создать /etc/nut/upsmon.conf  (скопировать из панели — данные уже подставлены)
+4. systemctl enable --now nut-client
+5. Установить heartbeat скрипт (шаг 6 в панели)</div>
+        <div class="tip">⚠️ Heartbeat скрипт нужен чтобы клиент отображался в таблице мониторинга. Без него upsmon работает, но не виден в панели.</div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step-item">
+      <div class="step-left">
+        <div class="step-num">5</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Настройка уведомлений</div>
+        <div class="step-desc">Перейдите в раздел <strong>Уведомления</strong>. Доступны два канала:</div>
+        <ul style="font-size:14px;color:var(--muted);margin:8px 0 12px 20px;line-height:2">
+          <li><strong>Telegram</strong> — укажите Bot Token и Chat ID</li>
+          <li><strong>Email (SMTP)</strong> — укажите данные почтового сервера</li>
+        </ul>
+        <div class="step-desc">Выберите какие события уведомлять:</div>
+        <ul style="font-size:14px;color:var(--muted);margin:8px 0 8px 20px;line-height:2">
+          <li>Переход на батарею (OB)</li>
+          <li>Низкий заряд (LB)</li>
+          <li>Восстановление питания (OL)</li>
+        </ul>
+        <div class="info">ℹ️ После настройки нажмите «Тест» — придёт пробное сообщение</div>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step-item">
+      <div class="step-left">
+        <div class="step-num">6</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Настройка NUT Сервера</div>
+        <div class="step-desc">Раздел <strong>NUT Сервер</strong> содержит три вкладки:</div>
+        <ul style="font-size:14px;color:var(--muted);margin:8px 0 12px 20px;line-height:2">
+          <li><strong>Статус</strong> — состояние служб nut-server и nut-monitor, кнопки перезапуска</li>
+          <li><strong>Конфигурация</strong> — NUT admin логин/пароль (для команд), порог низкого заряда, интервал опроса</li>
+          <li><strong>NUT Пользователи</strong> — управление пользователями upsd (slave для клиентов, master для управления)</li>
+        </ul>
+        <div class="tip">⚠️ Для выполнения команд (тест батареи, звук) необходимо указать NUT admin логин/пароль в Конфигурации — пользователь с ролью master и instcmds=all</div>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div class="step-item">
+      <div class="step-left">
+        <div class="step-num">7</div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Обновление панели</div>
+        <div class="step-desc">Для обновления панели до последней версии выполните на сервере:</div>
+        <div class="code">cd /root/WEB-NUT && bash update.sh</div>
+        <div class="info">ℹ️ Скрипт делает git pull, обновляет зависимости и перезапускает службу. База данных и настройки сохраняются.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- STATUS TABLE -->
+<div class="guide-section" id="statuses" style="padding-top:0">
+  <h2>Расшифровка статусов ИБП</h2>
+  <p class="sub">Что означают значки на дашборде</p>
+
+  <table class="status-table">
+    <thead>
+      <tr>
+        <th>Статус</th>
+        <th>Код NUT</th>
+        <th>Описание</th>
+        <th>Действие</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="s-badge" style="background:rgba(34,197,94,0.15);color:#22c55e">✅ Сеть</span></td>
+        <td><code>OL</code></td>
+        <td>Питание от сети, всё в норме</td>
+        <td style="color:var(--muted)">Ничего не нужно</td>
+      </tr>
+      <tr>
+        <td><span class="s-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b">⚠️ Батарея</span></td>
+        <td><code>OB</code></td>
+        <td>Питание от батареи — пропало сетевое питание</td>
+        <td style="color:#f59e0b">Проверить электропитание</td>
+      </tr>
+      <tr>
+        <td><span class="s-badge" style="background:rgba(239,68,68,0.15);color:#ef4444">🔴 Низкий заряд</span></td>
+        <td><code>LB</code></td>
+        <td>Батарея почти разряжена — скоро выключение</td>
+        <td style="color:#ef4444">Клиенты начнут выключение!</td>
+      </tr>
+      <tr>
+        <td><span class="s-badge" style="background:rgba(96,165,250,0.15);color:#60a5fa">⚡ Заряжается</span></td>
+        <td><code>CHRG</code></td>
+        <td>Батарея заряжается после работы на батарее</td>
+        <td style="color:var(--muted)">Ничего не нужно</td>
+      </tr>
+      <tr>
+        <td><span class="s-badge" style="background:rgba(167,139,250,0.15);color:#a78bfa">📉 Срез напр.</span></td>
+        <td><code>TRIM</code></td>
+        <td>ИБП снижает высокое входное напряжение</td>
+        <td style="color:var(--muted)">Следить за напряжением</td>
+      </tr>
+      <tr>
+        <td><span class="s-badge" style="background:rgba(251,146,60,0.15);color:#fb923c">📈 Подъём напр.</span></td>
+        <td><code>BOOST</code></td>
+        <td>ИБП повышает низкое входное напряжение</td>
+        <td style="color:#fb923c">Проверить качество питания</td>
+      </tr>
+      <tr>
+        <td><span class="s-badge" style="background:rgba(239,68,68,0.15);color:#ef4444">🔴 Shutdown!</span></td>
+        <td><code>FSD</code></td>
+        <td>Принудительное выключение — команда от сервера</td>
+        <td style="color:#ef4444">Все клиенты выключаются</td>
+      </tr>
+      <tr>
+        <td><span class="s-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b">🔋 Замени АКБ</span></td>
+        <td><code>RB</code></td>
+        <td>ИБП сигнализирует о необходимости замены батареи</td>
+        <td style="color:#f59e0b">Заменить аккумулятор</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FAQ -->
+<div class="faq" id="faq">
+  <h2>Часто задаваемые вопросы</h2>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Почему после входа нужно обновлять страницу?
+      <span class="faq-arrow">▼</span>
+    </div>
+    <div class="faq-a">
+      Это было исправлено. Теперь после успешного входа происходит автоматический редирект на дашборд. Если проблема осталась — очистите кэш браузера (Ctrl+Shift+R).
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Клиент не появляется в таблице мониторинга
+      <span class="faq-arrow">▼</span>
+    </div>
+    <div class="faq-a">
+      Для Windows: убедитесь что служба NUT-Monitor запущена (services.msc). Проверьте лог C:\NUT-Monitor\nut-monitor.log.<br><br>
+      Для Linux: убедитесь что установлен heartbeat скрипт (шаг 6 в инструкции) и таймер активен: <code>systemctl status nut-heartbeat.timer</code><br><br>
+      Клиент пропадает из таблицы если не присылал данные более 5 минут.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Ошибка ERR ACCESS-DENIED при выполнении команд
+      <span class="faq-arrow">▼</span>
+    </div>
+    <div class="faq-a">
+      Необходимо создать NUT пользователя с правами на команды и указать его в настройках панели.<br><br>
+      1. NUT Сервер → NUT Пользователи → Добавить: логин upsadmin, роль master, instcmds: all<br>
+      2. NUT Сервер → Конфигурация → NUT admin логин/пароль → Сохранить
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      NUT сервер не запускается после «Применить конфиг»
+      <span class="faq-arrow">▼</span>
+    </div>
+    <div class="faq-a">
+      Выполните на сервере:<br>
+      <code>echo "MODE=netserver" > /etc/nut/nut.conf</code><br>
+      <code>systemctl start nut-server</code><br><br>
+      Начиная с текущей версии панель автоматически проверяет и восстанавливает MODE=netserver перед каждым перезапуском.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Как обновить панель?
+      <span class="faq-arrow">▼</span>
+    </div>
+    <div class="faq-a">
+      Выполните на сервере Proxmox:<br>
+      <code>cd /root/WEB-NUT && bash update.sh</code><br><br>
+      Скрипт загружает последние изменения с GitHub, обновляет зависимости и перезапускает службу. Все настройки и база данных сохраняются.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Как удалить NUT Monitor Service с Windows клиента?
+      <span class="faq-arrow">▼</span>
+    </div>
+    <div class="faq-a">
+      Запустите PowerShell от администратора и выполните:<br>
+      <code>powershell -File nut-service-install.ps1 -Uninstall</code><br><br>
+      Или вручную:<br>
+      <code>C:\NUT-Monitor\NUT-Monitor.exe stop</code><br>
+      <code>C:\NUT-Monitor\NUT-Monitor.exe uninstall</code>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">
+      Что означает «OL CHRG» — ИБП заряжается, но заряд уже 100%?
+      <span class="faq-arrow">▼</span>
+    </div>
+    <div class="faq-a">
+      Это нормально для некоторых моделей ИБП. Некоторые устройства продолжают показывать статус CHRG даже когда батарея полностью заряжена — пока через них течёт ток поддержания заряда. Со временем статус CHRG должен исчезнуть и останется только OL.
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div style="font-size:20px;margin-bottom:8px">⚡ NUT Monitor</div>
+  <div style="margin-bottom:8px">Веб-панель управления для Network UPS Tools</div>
+  <div>
+    <a href="https://github.com/DATKAI/WEB-NUT" target="_blank">GitHub репозиторий</a>
+    &nbsp;·&nbsp;
+    <a href="https://networkupstools.org" target="_blank">Network UPS Tools</a>
+    &nbsp;·&nbsp;
+    <a href="/">Открыть панель</a>
+  </div>
+  <div style="margin-top:16px;font-size:11px">Proxmox · FastAPI · SQLite · WebSocket</div>
+</footer>
+
+<script>
+function toggleFaq(el) {
+  const answer = el.nextElementSibling;
+  const arrow = el.querySelector('.faq-arrow');
+  const isOpen = answer.classList.contains('open');
+  document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+  document.querySelectorAll('.faq-arrow').forEach(a => a.classList.remove('open'));
+  if (!isOpen) {
+    answer.classList.add('open');
+    arrow.classList.add('open');
+  }
+}
+</script>
+</body>
+</html>
