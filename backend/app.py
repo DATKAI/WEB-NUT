@@ -918,20 +918,6 @@ class ClientHeartbeat(BaseModel):
     status: str = ""
     battery: int = -1
 
-def send_wol(mac: str, broadcast: str = "255.255.255.255", port: int = 9) -> bool:
-    """Отправка Wake-on-LAN magic packet"""
-    import socket, struct
-    mac = mac.replace(":", "").replace("-", "").replace(".", "")
-    if len(mac) != 12:
-        return False
-    mac_bytes = bytes.fromhex(mac)
-    magic = b'\xff' * 6 + mac_bytes * 16
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        s.sendto(magic, (broadcast, port))
-    return True
-
-
 @app.post("/api/clients/register")
 async def api_client_register(body: ClientHeartbeat, request: Request):
     ip = request.headers.get("x-forwarded-for", request.client.host).split(",")[0].strip()
@@ -943,32 +929,6 @@ async def api_clients_monitored(request: Request):
     require_user(request)
     return db.get_monitored_clients(timeout_minutes=5)
 
-class WolRequest(BaseModel):
-    ip: str
-
-class MacUpdate(BaseModel):
-    ip: str
-    mac: str
-    broadcast: str = "255.255.255.255"
-
-@app.post("/api/clients/wol")
-async def api_wol(body: WolRequest, request: Request):
-    require_user(request)
-    clients = db.get_monitored_clients(timeout_minutes=99999)
-    client = next((c for c in clients if c["ip"] == body.ip), None)
-    if not client:
-        raise HTTPException(status_code=404, detail="Клиент не найден")
-    if not client.get("mac"):
-        raise HTTPException(status_code=400, detail="MAC адрес не указан")
-    ok = send_wol(client["mac"], client.get("broadcast", "255.255.255.255"))
-    db.log_event("system", "WoL", f"Wake-on-LAN → {client['hostname'] or body.ip} ({client['mac']})")
-    return {"ok": ok}
-
-@app.post("/api/clients/mac")
-async def api_set_mac(body: MacUpdate, request: Request):
-    require_admin(request)
-    db.update_client_mac(body.ip, body.mac, body.broadcast)
-    return {"ok": True}
 
 @app.get("/api/clients")
 async def api_clients(request: Request):
