@@ -87,23 +87,48 @@ async def poll_loop():
                 # Проверяем смену статуса
                 st = info.get("status", "UNKNOWN")
                 prev = prev_status.get(name)
-                if prev and prev != st:
+                status_changed = (prev is not None) and (prev != st)
+
+                # Уведомляем при смене статуса
+                if status_changed:
                     msg = f"Статус изменён: {prev} → {st}"
                     db.log_event(name, st, msg)
 
                     should_notify = False
-                    if "OB" in st and settings.get("notify_onbatt") == "1":
+                    if "OB" in st and "OB" not in (prev or "") and settings.get("notify_onbatt") == "1":
                         should_notify = True
-                        msg = f"⚠️ Переход на батарею! Статус: {st}"
-                    elif "LB" in st and settings.get("notify_lowbatt") == "1":
+                        charge = info.get("charge")
+                        runtime = info.get("runtime")
+                        charge_str = f", заряд {charge:.0f}%" if charge else ""
+                        runtime_str = f", осталось ~{int(runtime)//60} мин" if runtime else ""
+                        msg = f"⚠️ {name}: переход на батарею{charge_str}{runtime_str}"
+                    elif "LB" in st and "LB" not in (prev or "") and settings.get("notify_lowbatt") == "1":
                         should_notify = True
-                        msg = f"🔴 Низкий заряд батареи! Статус: {st}"
-                    elif "OL" in st and prev and "OB" in prev and settings.get("notify_online") == "1":
+                        charge = info.get("charge")
+                        msg = f"🔴 {name}: низкий заряд батареи! ({charge:.0f}%)" if charge else f"🔴 {name}: низкий заряд батареи!"
+                    elif "OL" in st and "OB" in (prev or "") and settings.get("notify_online") == "1":
                         should_notify = True
-                        msg = f"✅ Питание восстановлено. Статус: {st}"
+                        msg = f"✅ {name}: питание восстановлено"
+                    elif "FSD" in st:
+                        should_notify = True
+                        msg = f"🔴 {name}: принудительное выключение (FSD)!"
+                    elif "RB" in st and "RB" not in (prev or ""):
+                        should_notify = True
+                        msg = f"🔋 {name}: требуется замена батареи!"
 
                     if should_notify:
                         notify.notify_all(settings, name, st, msg)
+
+                # Дополнительно: уведомить если ИБП пропал / появился
+                was_online = prev_status.get(f"{name}_online")
+                is_online = info["online"]
+                if was_online is True and not is_online:
+                    db.log_event(name, "OFFLINE", f"⛔ {name}: ИБП недоступен (нет связи с NUT)")
+                    notify.notify_all(settings, name, "OFFLINE", f"⛔ {name}: ИБП недоступен!")
+                elif was_online is False and is_online:
+                    db.log_event(name, "ONLINE", f"✅ {name}: связь с ИБП восстановлена")
+                    notify.notify_all(settings, name, "ONLINE", f"✅ {name}: связь с ИБП восстановлена")
+                prev_status[f"{name}_online"] = is_online
 
                 prev_status[name] = st
 
