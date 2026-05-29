@@ -78,16 +78,24 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);di
 .ups-sub{font-size:11px;color:var(--muted);margin-top:3px;}
 .badges{display:flex;gap:5px;flex-wrap:wrap;}
 .badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
-.b-ol{background:#dcfce7;color:#15803d;}
-.b-ob{background:#fef3c7;color:#b45309;}
-.b-lb{background:#fee2e2;color:#b91c1c;}
-.b-chrg{background:#dbeafe;color:#1d4ed8;}
-.b-off{background:#f1f5f9;color:var(--muted);}
-html:not(.light) .b-ol{background:#14532d;color:var(--green);}
-html:not(.light) .b-ob{background:#451a03;color:var(--yellow);}
-html:not(.light) .b-lb{background:#450a0a;color:var(--red);}
-html:not(.light) .b-chrg{background:#1e3a5f;color:#60a5fa;}
-html:not(.light) .b-off{background:#1f2937;color:var(--muted);}
+/* Светлая тема — бейджи */
+.b-ol   {background:#dcfce7;color:#15803d;}
+.b-ob   {background:#fef3c7;color:#b45309;}
+.b-lb   {background:#fee2e2;color:#b91c1c;}
+.b-chrg {background:#dbeafe;color:#1d4ed8;}
+.b-trim {background:#ede9fe;color:#6d28d9;}
+.b-boost{background:#ffedd5;color:#c2410c;}
+.b-fsd  {background:#fee2e2;color:#b91c1c;}
+.b-off  {background:#f1f5f9;color:var(--muted);}
+/* Тёмная тема — бейджи */
+html:not(.light) .b-ol   {background:#14532d;color:#22c55e;}
+html:not(.light) .b-ob   {background:#451a03;color:#f59e0b;}
+html:not(.light) .b-lb   {background:#450a0a;color:#ef4444;}
+html:not(.light) .b-chrg {background:#1e3a5f;color:#60a5fa;}
+html:not(.light) .b-trim {background:#2e1065;color:#a78bfa;}
+html:not(.light) .b-boost{background:#431407;color:#fb923c;}
+html:not(.light) .b-fsd  {background:#450a0a;color:#f87171;}
+html:not(.light) .b-off  {background:#1f2937;color:var(--muted);}
 .bar-wrap{margin-bottom:12px;}
 .bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px;}
 .bar-track{background:var(--border);border-radius:6px;height:8px;overflow:hidden;}
@@ -125,8 +133,8 @@ tr:hover td{background:var(--table-hover);}
 .ev-row{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
 .ev-row:last-child{border-bottom:none;}
 .ev-ts{color:var(--muted);min-width:130px;white-space:nowrap;}
-.ev-ups{color:#60a5fa;min-width:80px;font-weight:600;}
-.ev-msg{color:#d1d5db;}
+.ev-ups{color:var(--accent);min-width:80px;font-weight:600;}
+.ev-msg{color:var(--text);opacity:.85;}
 
 /* Forms */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -184,8 +192,8 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 .scan-item-info p{font-size:11px;color:var(--muted);margin-top:3px;}
 
 /* Status legend */
-.status-legend-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0f1117;border-radius:8px;}
-.legend-text{font-size:12px;color:var(--muted);}
+.status-legend-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px;}
+.legend-text{font-size:12px;color:var(--text);}
 
 /* Client list */
 .client-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
@@ -244,9 +252,9 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
           <div class="status-legend-item"><span class="badge b-ob">OB</span><span class="legend-text">На батарее — пропало питание</span></div>
           <div class="status-legend-item"><span class="badge b-lb">LB</span><span class="legend-text">Низкий заряд — скоро выключение</span></div>
           <div class="status-legend-item"><span class="badge b-chrg">CHRG</span><span class="legend-text">Заряжается — батарея не полная</span></div>
-          <div class="status-legend-item"><span class="badge" style="background:#1a1a2e;color:#818cf8">TRIM</span><span class="legend-text">Режет напряжение — слишком высокое</span></div>
-          <div class="status-legend-item"><span class="badge" style="background:#1a1a2e;color:#fb923c">BOOST</span><span class="legend-text">Поднимает напряжение — слишком низкое</span></div>
-          <div class="status-legend-item"><span class="badge" style="background:#450a0a;color:#f87171">FSD</span><span class="legend-text">Принудительное выключение</span></div>
+          <div class="status-legend-item"><span class="badge b-trim">TRIM</span><span class="legend-text">Режет напряжение — слишком высокое</span></div>
+          <div class="status-legend-item"><span class="badge b-boost">BOOST</span><span class="legend-text">Поднимает напряжение — слишком низкое</span></div>
+          <div class="status-legend-item"><span class="badge b-fsd">FSD</span><span class="legend-text">Принудительное выключение</span></div>
         </div>
       </div>
 
@@ -1044,17 +1052,17 @@ async function sendCmdDirect(ups, cmd) {
 
 // ─── Monitored clients table ───
 function clientStatusBadge(st) {
-  if (!st || st === 'OFFLINE') return '<span style="color:#6b7280">⚫ Недоступен</span>';
+  if (!st || st === 'OFFLINE') return '<span class="badge b-off">⚫ Недоступен</span>';
   const flags = [];
-  if (st.includes('OL'))   flags.push('<span style="color:#22c55e">✅ Сеть</span>');
-  if (st.includes('OB'))   flags.push('<span style="color:#f59e0b">⚠️ Батарея</span>');
-  if (st.includes('LB'))   flags.push('<span style="color:#ef4444">🔴 Низкий заряд</span>');
-  if (st.includes('CHRG')) flags.push('<span style="color:#60a5fa">⚡ Заряжается</span>');
-  if (st.includes('TRIM')) flags.push('<span style="color:#a78bfa">📉 Срез напр.</span>');
-  if (st.includes('BOOST'))flags.push('<span style="color:#fb923c">📈 Подъём напр.</span>');
-  if (st.includes('FSD'))  flags.push('<span style="color:#ef4444">🔴 Выкл!</span>');
-  if (st.includes('RB'))   flags.push('<span style="color:#f59e0b">🔋 Замени АКБ</span>');
-  return flags.length ? flags.join(' ') : `<span style="color:#6b7280">${st}</span>`;
+  if (st.includes('OL'))   flags.push('<span class="badge b-ol">✅ Сеть</span>');
+  if (st.includes('OB'))   flags.push('<span class="badge b-ob">⚠️ Батарея</span>');
+  if (st.includes('LB'))   flags.push('<span class="badge b-lb">🔴 Низкий заряд</span>');
+  if (st.includes('CHRG')) flags.push('<span class="badge b-chrg">⚡ Заряжается</span>');
+  if (st.includes('TRIM')) flags.push('<span class="badge b-trim">📉 Срез напр.</span>');
+  if (st.includes('BOOST'))flags.push('<span class="badge b-boost">📈 Подъём напр.</span>');
+  if (st.includes('FSD'))  flags.push('<span class="badge b-fsd">🔴 Выкл!</span>');
+  if (st.includes('RB'))   flags.push('<span class="badge b-ob">🔋 Замени АКБ</span>');
+  return flags.length ? flags.join(' ') : `<span class="badge b-off">${st}</span>`;
 }
 
 async function loadMonitoredClients() {
