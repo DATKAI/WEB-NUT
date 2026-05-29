@@ -702,7 +702,7 @@ async def script_service_zip(request: Request):
         "while ($true) {",
         '    $status = Get-UpsVar "ups.status"',
         "    if ($null -eq $status) {",
-        '        Write-Log "WARN: Cannot reach $Server:$Port"',
+        '        Write-Log "WARN: Cannot reach ${Server}:$Port"',
         "        Start-Sleep -Seconds 30",
         "        continue",
         "    }",
