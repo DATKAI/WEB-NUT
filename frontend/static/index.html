@@ -27,9 +27,9 @@ html.light {
 body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;transition:background .2s,color .2s;}
 
 /* Sidebar */
-.sidebar{width:220px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar{width:220px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:background .2s,border-color .2s;}
 .sidebar-logo{padding:20px 16px;border-bottom:1px solid var(--border);}
-.sidebar-logo h1{font-size:16px;font-weight:700;color:#fff;}
+.sidebar-logo h1{font-size:16px;font-weight:700;color:var(--text);}
 .sidebar-logo p{font-size:11px;color:var(--muted);margin-top:2px;}
 .nav{flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--muted);transition:all .15s;user-select:none;}
@@ -265,10 +265,7 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 
       <!-- Мониторинг клиентов на дашборде -->
       <div class="card" style="margin-bottom:16px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <div class="section-title" style="margin:0">Клиенты</div>
-          <button class="btn btn-gray btn-sm" onclick="loadMonitoredClients()">🔄</button>
-        </div>
+        <div class="section-title">Клиенты</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:10px">NUT Monitor Service (Windows) и nut-heartbeat (Linux)</p>
         <div id="monitored-clients-table-dash"><div style="color:var(--muted);font-size:13px">Загрузка...</div></div>
       </div>
