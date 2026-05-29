@@ -162,8 +162,29 @@ def write_upsd_users(nut_users: list):
     return content
 
 
+def _ensure_nut_conf():
+    """Убедиться что nut.conf содержит MODE=netserver"""
+    nut_conf = "/etc/nut/nut.conf"
+    try:
+        with open(nut_conf, "r") as f:
+            content = f.read()
+        if "MODE=netserver" not in content:
+            # Заменяем любой MODE= на netserver или добавляем
+            import re as _re
+            if _re.search(r"^MODE=", content, _re.MULTILINE):
+                content = _re.sub(r"^MODE=.*$", "MODE=netserver", content, flags=_re.MULTILINE)
+            else:
+                content += "\nMODE=netserver\n"
+            with open(nut_conf, "w") as f:
+                f.write(content)
+    except FileNotFoundError:
+        with open(nut_conf, "w") as f:
+            f.write("MODE=netserver\n")
+
+
 def restart_nut():
     try:
+        _ensure_nut_conf()
         subprocess.run(["upsdrvctl", "stop"], timeout=10)
         subprocess.run(["upsdrvctl", "start"], timeout=15)
         subprocess.run(["systemctl", "restart", "nut-server"], timeout=10)
