@@ -24,10 +24,10 @@ def send_ntfy(url: str, message: str, title: str = "NUT Monitor", priority: str 
     if not url:
         return False
     try:
-        import ssl, subprocess
-        # Используем curl — он работает там где Python urllib зависает (TLS в РФ)
+        import ssl, subprocess, shutil
+        curl_bin = shutil.which("curl") or "/usr/bin/curl"
         result = subprocess.run(
-            ["curl", "-sfL", "--max-time", "10",
+            [curl_bin, "-sfL", "--max-time", "10",
              "-X", "POST", url,
              "-H", f"Title: {title}",
              "-H", f"Priority: {priority}",
@@ -36,6 +36,8 @@ def send_ntfy(url: str, message: str, title: str = "NUT Monitor", priority: str 
              "-d", message],
             capture_output=True, timeout=15
         )
+        if result.returncode != 0:
+            print(f"[ntfy] curl error: {result.stderr.decode()[:200]}")
         return result.returncode == 0
     except Exception as e:
         print(f"[ntfy] Ошибка: {e}")
