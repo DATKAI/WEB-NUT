@@ -368,31 +368,40 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
           </div>
         </div>
 
-        <!-- Вариант 2 — upsmon вручную -->
+        <!-- Вариант 2 — PowerShell служба -->
         <div class="card">
-          <div class="section-title">Вариант 2 — NUT upsmon (автовыключение при разряде)</div>
+          <div class="section-title">Вариант 2 — Автозапуск без входа пользователя (Scheduled Task)</div>
           <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-            Мониторинг через NUT клиент. При низком заряде батареи автоматически выключает компьютер. Требует установки NUT для Windows.
+            PowerShell скрипт устанавливается как задача планировщика от имени SYSTEM — работает всегда, даже если никто не вошёл в Windows. При низком заряде выключает ПК.
           </p>
           <div class="step">
             <div class="step-num">1</div>
             <div class="step-body">
-              <div class="step-title">Скачай NUT для Windows</div>
-              <div class="code-block" style="margin-top:6px">https://github.com/networkupstools/nut/releases<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+              <div class="step-title">Создай файл C:\nut-monitor\nut-monitor.ps1</div>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:6px">Содержимое скрипта (подставь свои данные):</p>
+              <div class="code-block" style="margin-top:4px" id="win-ps1-content">
+$Server = "192.168.10.3"; $Port = 3493<br>
+$UPS = "ippon"; $Login = "upslave"; $Pass = "password"<br>
+$Log = "C:\nut-monitor\nut.log"<br>
+function Get-Var($v){try{$t=[Net.Sockets.TcpClient]::new($Server,$Port);$s=$t.GetStream();$w=[IO.StreamWriter]::new($s);$w.AutoFlush=$true;$r=[IO.StreamReader]::new($s);$w.WriteLine("USERNAME $Login");$r.ReadLine()|Out-Null;$w.WriteLine("PASSWORD $Pass");$r.ReadLine()|Out-Null;$w.WriteLine("GET VAR $UPS $v");$resp=$r.ReadLine();$t.Close();if($resp -match '"(.+)"'){return $Matches[1]}}catch{}};<br>
+while($true){$st=Get-Var "ups.status";Add-Content $Log "$(Get-Date -f 'HH:mm:ss') $st";if($st -like "*LB*"){Stop-Computer -Force};Start-Sleep 30}
+                <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+              </div>
             </div>
           </div>
           <div class="step">
             <div class="step-num">2</div>
             <div class="step-body">
-              <div class="step-title">Создай C:\nut\etc\upsmon.conf</div>
-              <div class="code-block" style="margin-top:6px" id="win-upsmon-conf">MONITOR ups@192.168.10.3 1 upslave password slave<br>SHUTDOWNCMD "shutdown /s /t 30"<br>MINSUPPLIES 1<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+              <div class="step-title">Установи задачу планировщика (PowerShell от администратора)</div>
+              <div class="code-block" style="margin-top:6px" id="win-task-cmd">$a=New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -WindowStyle Hidden -File C:\nut-monitor\nut-monitor.ps1"; $t=New-ScheduledTaskTrigger -AtStartup; $p=New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest; Register-ScheduledTask -TaskName "NUT-Monitor" -Action $a -Trigger $t -Principal $p -Force; Start-ScheduledTask "NUT-Monitor"<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
             </div>
           </div>
           <div class="step">
             <div class="step-num">3</div>
             <div class="step-body">
-              <div class="step-title">Запусти upsmon как службу</div>
-              <div class="code-block" style="margin-top:6px">C:\nut\sbin\upsmon.exe -F<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+              <div class="step-title">Проверь лог работы</div>
+              <div class="code-block" style="margin-top:6px">Get-Content C:\nut-monitor\nut.log -Tail 20<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+              <p style="font-size:12px;color:var(--muted);margin-top:6px">Задача запускается от SYSTEM — работает без входа пользователя, с момента старта Windows</p>
             </div>
           </div>
         </div>
