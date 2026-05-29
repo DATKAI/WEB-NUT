@@ -76,6 +76,8 @@ def init_db():
             status TEXT,
             battery INTEGER,
             last_seen TEXT,
+            mac TEXT DEFAULT '',
+            broadcast TEXT DEFAULT '255.255.255.255',
             UNIQUE(ip)
         );
     """)
@@ -109,6 +111,22 @@ def init_db():
             "INSERT INTO users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)",
             ("admin", pw, "admin", now())
         )
+
+    # Миграция: добавить колонки mac/broadcast если их нет
+    try:
+        conn2 = get_conn()
+        conn2.execute("ALTER TABLE monitored_clients ADD COLUMN mac TEXT DEFAULT ''")
+        conn2.commit()
+        conn2.close()
+    except Exception:
+        pass
+    try:
+        conn3 = get_conn()
+        conn3.execute("ALTER TABLE monitored_clients ADD COLUMN broadcast TEXT DEFAULT '255.255.255.255'")
+        conn3.commit()
+        conn3.close()
+    except Exception:
+        pass
 
     conn.commit()
     conn.close()
@@ -263,6 +281,16 @@ def upsert_client(ip, hostname, ups, status, battery):
                status=excluded.status, battery=excluded.battery,
                last_seen=excluded.last_seen""",
         (ip, hostname, ups, status, battery, now())
+    )
+    conn.commit()
+    conn.close()
+
+
+def update_client_mac(ip: str, mac: str, broadcast: str = "255.255.255.255"):
+    conn = get_conn()
+    conn.execute(
+        "UPDATE monitored_clients SET mac=?, broadcast=? WHERE ip=?",
+        (mac.upper().strip(), broadcast.strip(), ip)
     )
     conn.commit()
     conn.close()

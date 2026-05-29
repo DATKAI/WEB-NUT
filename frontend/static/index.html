@@ -663,6 +663,33 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
   </div>
 </div>
 
+<div class="modal-bg" id="modal-mac">
+  <div class="modal">
+    <h3>Wake-on-LAN — <span id="mac-modal-host"></span></h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Укажи MAC адрес сетевой карты клиента. WoL должен быть включён в BIOS/UEFI компьютера.</p>
+    <input type="hidden" id="mac-modal-ip">
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>MAC адрес</label>
+        <input id="mac-modal-mac" placeholder="AA:BB:CC:DD:EE:FF">
+        <p style="font-size:11px;color:var(--muted);margin-top:4px">
+          Windows: <code>getmac /v</code> или <code>ipconfig /all</code><br>
+          Linux: <code>ip link show</code> или <code>cat /sys/class/net/eth0/address</code>
+        </p>
+      </div>
+      <div class="form-group full">
+        <label>Broadcast адрес</label>
+        <input id="mac-modal-broadcast" placeholder="255.255.255.255" value="255.255.255.255">
+        <p style="font-size:11px;color:var(--muted);margin-top:4px">Обычно 255.255.255.255. Для подсети 192.168.10.x используй 192.168.10.255</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modal-mac')">Отмена</button>
+      <button class="btn btn-blue" onclick="saveMac()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modal-commands">
   <div class="modal">
     <h3 id="modal-cmd-title">Команды UPS</h3>
@@ -1035,6 +1062,13 @@ async function loadMonitoredClients() {
       const rows = clients.map(c => {
         const ago = c.last_seen ? timeSince(c.last_seen) : '—';
         const bat = c.battery >= 0 ? `${c.battery}%` : '—';
+        const hasMac = c.mac && c.mac.length > 0;
+        const wolBtn = hasMac
+          ? `<button class="btn btn-green btn-sm" onclick="sendWol('${c.ip}')" title="${c.mac}">⚡ WoL</button>`
+          : `<button class="btn btn-gray btn-sm" onclick="openMacModal('${c.ip}','${c.hostname||''}','${c.mac||''}','${c.broadcast||'255.255.255.255'}')" title="Задать MAC">+ MAC</button>`;
+        const editBtn = hasMac
+          ? `<button class="btn btn-gray btn-sm" onclick="openMacModal('${c.ip}','${c.hostname||''}','${c.mac||''}','${c.broadcast||'255.255.255.255'}')" style="margin-left:4px">✏️</button>`
+          : '';
         return `<tr style="border-bottom:1px solid var(--border)">
           <td style="padding:8px;font-weight:600">${c.hostname || '—'}</td>
           <td style="padding:8px;font-family:monospace;color:var(--muted)">${c.ip}</td>
@@ -1042,6 +1076,7 @@ async function loadMonitoredClients() {
           <td style="padding:8px">${clientStatusBadge(c.status)}</td>
           <td style="padding:8px;font-weight:600">${bat}</td>
           <td style="padding:8px;color:var(--muted);font-size:12px">${ago}</td>
+          <td style="padding:8px">${wolBtn}${editBtn}</td>
         </tr>`;
       }).join('');
       html = `<table style="width:100%;border-collapse:collapse;font-size:13px">
@@ -1052,6 +1087,7 @@ async function loadMonitoredClients() {
           <th style="text-align:left;padding:6px 8px">Статус</th>
           <th style="text-align:left;padding:6px 8px">Батарея</th>
           <th style="text-align:left;padding:6px 8px">Обновлено</th>
+          <th style="text-align:left;padding:6px 8px">WoL</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
@@ -1059,6 +1095,35 @@ async function loadMonitoredClients() {
     targets.forEach(el => el.innerHTML = html);
   } catch(e) {
     targets.forEach(el => el.innerHTML = '<div style="color:var(--muted);font-size:13px">Ошибка загрузки</div>');
+  }
+}
+
+// ─── Wake-on-LAN ───
+function openMacModal(ip, hostname, mac, broadcast) {
+  document.getElementById('mac-modal-ip').value = ip;
+  document.getElementById('mac-modal-host').textContent = hostname || ip;
+  document.getElementById('mac-modal-mac').value = mac || '';
+  document.getElementById('mac-modal-broadcast').value = broadcast || '255.255.255.255';
+  openModal('modal-mac');
+}
+
+async function saveMac() {
+  const ip        = document.getElementById('mac-modal-ip').value;
+  const mac       = document.getElementById('mac-modal-mac').value.trim();
+  const broadcast = document.getElementById('mac-modal-broadcast').value.trim() || '255.255.255.255';
+  if (!mac) { toast('Введите MAC адрес', 'err'); return; }
+  await api('/api/clients/mac', 'POST', { ip, mac, broadcast });
+  closeModal('modal-mac');
+  toast('MAC сохранён', 'ok');
+  loadMonitoredClients();
+}
+
+async function sendWol(ip) {
+  try {
+    const r = await api('/api/clients/wol', 'POST', { ip });
+    toast(r.ok ? '⚡ Magic packet отправлен!' : '✗ Ошибка отправки', r.ok ? 'ok' : 'err');
+  } catch(e) {
+    toast('✗ Ошибка: ' + e.message, 'err');
   }
 }
 
