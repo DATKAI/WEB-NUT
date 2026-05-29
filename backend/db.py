@@ -68,6 +68,17 @@ def init_db():
             runtime INTEGER
         );
 
+        CREATE TABLE IF NOT EXISTS outages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ups TEXT NOT NULL,
+            started_at TEXT NOT NULL,
+            ended_at TEXT,
+            duration_sec INTEGER,
+            start_charge REAL,
+            min_charge REAL,
+            end_charge REAL
+        );
+
         CREATE TABLE IF NOT EXISTS monitored_clients (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ip TEXT NOT NULL,
@@ -252,6 +263,102 @@ def delete_nut_user(username):
     conn.close()
 
 
+# --- Отключения питания ---
+def outage_start(ups: str, charge: float = None):
+    conn = get_conn()
+    # Закрываем незакрытый outage если есть
+    conn.execute(
+        "UPDATE outages SET ended_at=?, duration_sec=0 WHERE ups=? AND ended_at IS NULL",
+        (now(), ups)
+    )
+    conn.execute(
+        "INSERT INTO outages (ups, started_at, start_charge, min_charge) VALUES (?,?,?,?)",
+        (ups, now(), charge, charge)
+    )
+    conn.commit()
+    conn.close()
+
+
+def outage_end(ups: str, charge: float = None):
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, started_at, min_charge FROM outages WHERE ups=? AND ended_at IS NULL ORDER BY id DESC LIMIT 1",
+        (ups,)
+    ).fetchone()
+    if row:
+        from datetime import datetime
+        start = datetime.strptime(row["started_at"], "%Y-%m-%d %H:%M:%S")
+        end_dt = datetime.strptime(now(), "%Y-%m-%d %H:%M:%S")
+        duration = int((end_dt - start).total_seconds())
+        min_charge = min(filter(None, [row["min_charge"], charge])) if charge else row["min_charge"]
+        conn.execute(
+            "UPDATE outages SET ended_at=?, duration_sec=?, min_charge=?, end_charge=? WHERE id=?",
+            (now(), duration, min_charge, charge, row["id"])
+        )
+        conn.commit()
+    conn.close()
+
+
+def outage_update_charge(ups: str, charge: float):
+    """Обновить минимальный заряд во время текущего отключения"""
+    conn = get_conn()
+    conn.execute(
+        "UPDATE outages SET min_charge=MIN(COALESCE(min_charge,100),?) WHERE ups=? AND ended_at IS NULL",
+        (charge, ups)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_outages(ups: str = None, limit: int = 50):
+    conn = get_conn()
+    if ups:
+        rows = conn.execute(
+            "SELECT * FROM outages WHERE ups=? ORDER BY id DESC LIMIT ?", (ups, limit)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM outages ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_outage_stats(ups: str = None):
+    conn = get_conn()
+    base = "WHERE ended_at IS NOT NULL"
+    args = []
+    if ups:
+        base += " AND ups=?"
+        args.append(ups)
+    # Всего
+    total = conn.execute(f"SELECT COUNT(*) FROM outages {base}", args).fetchone()[0]
+    # За последние 30 дней
+    month = conn.execute(
+        f"SELECT COUNT(*) FROM outages {base} AND started_at >= datetime('now','-30 days','localtime')", args
+    ).fetchone()[0]
+    # Среднее время
+    avg = conn.execute(
+        f"SELECT AVG(duration_sec) FROM outages {base}", args
+    ).fetchone()[0]
+    # Максимальное время
+    maxd = conn.execute(
+        f"SELECT MAX(duration_sec) FROM outages {base}", args
+    ).fetchone()[0]
+    # Общее время
+    total_sec = conn.execute(
+        f"SELECT SUM(duration_sec) FROM outages {base}", args
+    ).fetchone()[0]
+    conn.close()
+    return {
+        "total": total,
+        "last_30_days": month,
+        "avg_duration_sec": round(avg) if avg else 0,
+        "max_duration_sec": maxd or 0,
+        "total_duration_sec": total_sec or 0,
+    }
+
+
 # --- Мониторинг клиентов ---
 def upsert_client(ip, hostname, ups, status, battery):
     conn = get_conn()
@@ -292,13 +399,30 @@ def log_event(ups, status, message):
     conn.close()
 
 
-def get_events(limit=50):
+def get_events(limit=50, offset=0, search="", ups_filter=""):
     conn = get_conn()
+    where, args = [], []
+    if search:
+        where.append("(message LIKE ? OR status LIKE ?)")
+        args += [f"%{search}%", f"%{search}%"]
+    if ups_filter:
+        where.append("ups=?")
+        args.append(ups_filter)
+    w = ("WHERE " + " AND ".join(where)) if where else ""
+    total = conn.execute(f"SELECT COUNT(*) FROM events {w}", args).fetchone()[0]
     rows = conn.execute(
-        "SELECT ts, ups, status, message FROM events ORDER BY id DESC LIMIT ?", (limit,)
+        f"SELECT ts, ups, status, message FROM events {w} ORDER BY id DESC LIMIT ? OFFSET ?",
+        args + [limit, offset]
     ).fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    return {"total": total, "items": [dict(r) for r in rows]}
+
+
+def get_events_ups_list():
+    conn = get_conn()
+    rows = conn.execute("SELECT DISTINCT ups FROM events ORDER BY ups").fetchall()
+    conn.close()
+    return [r[0] for r in rows]
 
 
 # --- Метрики ---

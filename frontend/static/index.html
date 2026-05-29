@@ -482,9 +482,37 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 
     <!-- EVENTS -->
     <div class="page" id="page-events">
+
+      <!-- Статистика отключений -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px" id="outage-stats-grid">
+      </div>
+
+      <!-- История отключений -->
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="section-title" style="margin:0">История отключений</div>
+          <select id="outage-ups-filter" style="font-size:12px;padding:4px 8px" onchange="loadOutages()">
+            <option value="">Все ИБП</option>
+          </select>
+        </div>
+        <div id="outages-list"><div style="color:var(--muted);font-size:13px">Загрузка...</div></div>
+      </div>
+
+      <!-- Журнал событий -->
       <div class="card">
-        <div class="section-title">Журнал событий</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="section-title" style="margin:0">Журнал событий</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="events-search" placeholder="🔍 Поиск..." style="width:180px;padding:5px 10px;font-size:12px" oninput="eventsPage=0;loadEvents()">
+            <select id="events-ups-filter" style="font-size:12px;padding:5px 8px" onchange="eventsPage=0;loadEvents()">
+              <option value="">Все ИБП</option>
+            </select>
+            <button class="btn btn-gray btn-sm" onclick="exportEvents()">⬇ CSV</button>
+          </div>
+        </div>
         <div id="events-list"><div style="color:var(--muted);font-size:13px">Нет событий</div></div>
+        <!-- Пагинация -->
+        <div id="events-pagination" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px"></div>
       </div>
     </div>
 
@@ -836,6 +864,7 @@ async function init() {
     updateClientInfo();
     loadMonitoredClients();
     setInterval(loadMonitoredClients, 30000);
+    initEventsFilters();
     // Графики — загружаем через 1 сек после инициализации
     setTimeout(() => {
       const upsNames = Object.keys(currentUpsData || {});
@@ -864,7 +893,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
     const page = item.dataset.page;
     document.getElementById('page-' + page).classList.add('active');
     document.getElementById('page-title').textContent = item.textContent.trim();
-    if (page === 'events') loadEvents();
+    if (page === 'events') { loadEvents(); loadOutages(); }
     if (page === 'nut') loadNutServices();
     if (page === 'devices') loadDevicesTable();
     if (page === 'clients') { updateClientCmds(); loadMonitoredClients(); }
@@ -1532,13 +1561,126 @@ async function loadNutClients() {
 }
 
 // ─── Events ───
+let eventsPage = 0;
+const eventsPerPage = 30;
+
 async function loadEvents() {
-  const events = await api('/api/events').catch(() => []);
+  const search = document.getElementById('events-search')?.value || '';
+  const ups    = document.getElementById('events-ups-filter')?.value || '';
+  const offset = eventsPage * eventsPerPage;
+  const data = await api(`/api/events?limit=${eventsPerPage}&offset=${offset}&search=${encodeURIComponent(search)}&ups=${encodeURIComponent(ups)}`).catch(() => ({ total: 0, items: [] }));
+  const items = data.items || [];
+  const total = data.total || 0;
+
   const el = document.getElementById('events-list');
-  if (!events.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет событий</div>'; return; }
-  el.innerHTML = events.map(e =>
-    `<div class="ev-row"><span class="ev-ts">${e.ts}</span><span class="ev-ups">${e.ups}</span><span class="ev-msg">${e.message}</span></div>`
-  ).join('');
+  if (!items.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет событий</div>'; }
+  else {
+    el.innerHTML = items.map(e =>
+      `<div class="ev-row"><span class="ev-ts">${e.ts}</span><span class="ev-ups">${e.ups}</span><span class="ev-msg">${e.message}</span></div>`
+    ).join('');
+  }
+
+  // Пагинация
+  const pages = Math.ceil(total / eventsPerPage);
+  const pg = document.getElementById('events-pagination');
+  if (pg) {
+    if (pages <= 1) { pg.innerHTML = ''; return; }
+    let html = `<span style="font-size:12px;color:var(--muted)">${offset+1}–${Math.min(offset+eventsPerPage, total)} из ${total}</span>`;
+    html += `<button class="btn btn-gray btn-sm" onclick="eventsPage=0;loadEvents()" ${eventsPage===0?'disabled':''}>«</button>`;
+    html += `<button class="btn btn-gray btn-sm" onclick="eventsPage--;loadEvents()" ${eventsPage===0?'disabled':''}>‹</button>`;
+    // Номера страниц
+    for (let i = Math.max(0, eventsPage-2); i <= Math.min(pages-1, eventsPage+2); i++) {
+      html += `<button class="btn btn-sm ${i===eventsPage?'btn-blue':'btn-gray'}" onclick="eventsPage=${i};loadEvents()">${i+1}</button>`;
+    }
+    html += `<button class="btn btn-gray btn-sm" onclick="eventsPage++;loadEvents()" ${eventsPage>=pages-1?'disabled':''}>›</button>`;
+    html += `<button class="btn btn-gray btn-sm" onclick="eventsPage=${pages-1};loadEvents()" ${eventsPage>=pages-1?'disabled':''}>»</button>`;
+    pg.innerHTML = html;
+  }
+}
+
+async function initEventsFilters() {
+  const upsList = await api('/api/events/ups-list').catch(() => []);
+  const sel = document.getElementById('events-ups-filter');
+  const sel2 = document.getElementById('outage-ups-filter');
+  upsList.forEach(u => {
+    [sel, sel2].forEach(s => {
+      if (s) { const o = document.createElement('option'); o.value = u; o.textContent = u; s.appendChild(o); }
+    });
+  });
+}
+
+function fmtDuration(sec) {
+  if (!sec) return '—';
+  if (sec < 60) return `${sec} сек`;
+  if (sec < 3600) return `${Math.floor(sec/60)} мин ${sec%60} сек`;
+  return `${Math.floor(sec/3600)} ч ${Math.floor((sec%3600)/60)} мин`;
+}
+
+async function loadOutages() {
+  const ups = document.getElementById('outage-ups-filter')?.value || '';
+  const data = await api(`/api/outages?ups=${encodeURIComponent(ups)}&limit=20`).catch(() => []);
+  const stats = await api(`/api/outages/stats?ups=${encodeURIComponent(ups)}`).catch(() => ({}));
+
+  // Статистика
+  const grid = document.getElementById('outage-stats-grid');
+  if (grid) {
+    grid.innerHTML = [
+      { label: 'Всего отключений', value: stats.total ?? 0, icon: '⚡' },
+      { label: 'За последние 30 дней', value: stats.last_30_days ?? 0, icon: '📅' },
+      { label: 'Среднее время', value: fmtDuration(stats.avg_duration_sec), icon: '⏱' },
+      { label: 'Максимальное время', value: fmtDuration(stats.max_duration_sec), icon: '🔴' },
+      { label: 'Суммарное время', value: fmtDuration(stats.total_duration_sec), icon: '📊' },
+    ].map(s => `
+      <div class="card" style="padding:14px;margin:0;text-align:center">
+        <div style="font-size:22px;margin-bottom:4px">${s.icon}</div>
+        <div style="font-size:18px;font-weight:700;color:var(--text)">${s.value}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${s.label}</div>
+      </div>
+    `).join('');
+  }
+
+  // Таблица
+  const el = document.getElementById('outages-list');
+  if (!data.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет записей об отключениях. Данные появятся после первого отключения питания.</div>';
+    return;
+  }
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="color:var(--muted);font-size:11px;border-bottom:1px solid var(--border)">
+      <th style="text-align:left;padding:6px 8px">ИБП</th>
+      <th style="text-align:left;padding:6px 8px">Начало</th>
+      <th style="text-align:left;padding:6px 8px">Конец</th>
+      <th style="text-align:left;padding:6px 8px">Длительность</th>
+      <th style="text-align:left;padding:6px 8px">Нач. заряд</th>
+      <th style="text-align:left;padding:6px 8px">Мин. заряд</th>
+      <th style="text-align:left;padding:6px 8px">Кон. заряд</th>
+    </tr></thead>
+    <tbody>${data.map(o => {
+      const active = !o.ended_at;
+      return `<tr style="border-bottom:1px solid var(--border)${active?';background:rgba(245,158,11,0.05)':''}">
+        <td style="padding:8px;font-weight:600">${o.ups}</td>
+        <td style="padding:8px;font-size:12px">${o.started_at}</td>
+        <td style="padding:8px;font-size:12px;color:var(--muted)">${o.ended_at || '<span style="color:var(--yellow)">⚡ Сейчас</span>'}</td>
+        <td style="padding:8px;font-weight:600;color:${active?'var(--yellow)':'var(--text)'}">${active ? '⚡ В процессе' : fmtDuration(o.duration_sec)}</td>
+        <td style="padding:8px">${o.start_charge != null ? o.start_charge.toFixed(0)+'%' : '—'}</td>
+        <td style="padding:8px;color:var(--red)">${o.min_charge != null ? o.min_charge.toFixed(0)+'%' : '—'}</td>
+        <td style="padding:8px">${o.end_charge != null ? o.end_charge.toFixed(0)+'%' : '—'}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+async function exportEvents() {
+  const search = document.getElementById('events-search')?.value || '';
+  const ups    = document.getElementById('events-ups-filter')?.value || '';
+  const data = await api(`/api/events?limit=9999&offset=0&search=${encodeURIComponent(search)}&ups=${encodeURIComponent(ups)}`).catch(() => ({ items: [] }));
+  const rows = [['Время','ИБП','Статус','Сообщение']];
+  (data.items || []).forEach(e => rows.push([e.ts, e.ups, e.status || '', e.message || '']));
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
+  a.download = `events_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
 }
 
 // ─── NUT Server ───

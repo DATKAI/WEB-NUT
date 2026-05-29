@@ -118,12 +118,14 @@ async def poll_loop():
                     if "OB" in st and "OB" not in (prev or "") and settings.get("notify_onbatt") == "1":
                         should_notify = True
                         msg = f"⚠️ {name}: переход на батарею{charge_str}{runtime_str}"
+                        db.outage_start(name, charge)
                     elif "LB" in st and "LB" not in (prev or "") and settings.get("notify_lowbatt") == "1":
                         should_notify = True
                         msg = f"🔴 {name}: низкий заряд батареи{charge_str}!"
                     elif "OL" in st and "OB" in (prev or "") and settings.get("notify_online") == "1":
                         should_notify = True
                         msg = f"✅ {name}: питание восстановлено"
+                        db.outage_end(name, charge)
                     elif "FSD" in st:
                         should_notify = True
                         msg = f"🔴 {name}: принудительное выключение!"
@@ -133,6 +135,10 @@ async def poll_loop():
 
                     if should_notify:
                         notify.notify_all(settings, name, h_st, msg)
+
+                # Обновляем минимальный заряд во время отключения
+                if "OB" in st and info.get("charge"):
+                    db.outage_update_charge(name, info["charge"])
 
                 # Уведомить если ИБП пропал / появился
                 was_online = prev_status.get(f"{name}_online")
@@ -959,9 +965,25 @@ async def api_clients(request: Request):
 # ─────────── События ───────────
 
 @app.get("/api/events")
-async def api_events(request: Request):
+async def api_events(request: Request, limit: int = 50, offset: int = 0,
+                     search: str = "", ups: str = ""):
     require_user(request)
-    return db.get_events(100)
+    return db.get_events(limit, offset, search, ups)
+
+@app.get("/api/events/ups-list")
+async def api_events_ups_list(request: Request):
+    require_user(request)
+    return db.get_events_ups_list()
+
+@app.get("/api/outages")
+async def api_outages(request: Request, ups: str = "", limit: int = 50):
+    require_user(request)
+    return db.get_outages(ups or None, limit)
+
+@app.get("/api/outages/stats")
+async def api_outage_stats(request: Request, ups: str = ""):
+    require_user(request)
+    return db.get_outage_stats(ups or None)
 
 
 # ─────────── WebSocket ───────────
