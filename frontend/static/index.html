@@ -228,14 +228,14 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
         </div>
       </div>
 
-      <!-- Клиенты -->
+      <!-- Мониторинг клиентов на дашборде -->
       <div class="card" style="margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <div class="section-title" style="margin:0">Подключённые клиенты</div>
-          <button class="btn btn-gray btn-sm" onclick="loadNutClients()">🔄</button>
+          <div class="section-title" style="margin:0">Клиенты</div>
+          <button class="btn btn-gray btn-sm" onclick="loadMonitoredClients()">🔄</button>
         </div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Активные TCP соединения на порт 3493 — клиенты WinNUT-Client и upsmon</p>
-        <div id="dash-clients"><div style="color:var(--muted);font-size:13px">Загрузка...</div></div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">NUT Monitor Service (Windows) и nut-heartbeat (Linux)</p>
+        <div id="monitored-clients-table-dash"><div style="color:var(--muted);font-size:13px">Загрузка...</div></div>
       </div>
 
       <div class="card">
@@ -987,39 +987,45 @@ function clientStatusBadge(st) {
 }
 
 async function loadMonitoredClients() {
-  const el = document.getElementById('monitored-clients-table');
-  if (!el) return;
+  const targets = [
+    document.getElementById('monitored-clients-table'),
+    document.getElementById('monitored-clients-table-dash'),
+  ].filter(Boolean);
+  if (!targets.length) return;
+
   try {
     const clients = await api('/api/clients/monitored');
+    let html;
     if (!clients.length) {
-      el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет активных клиентов. Клиенты появятся после установки <b>NUT Monitor Service</b> на Windows машинах.</div>';
-      return;
+      html = '<div style="color:var(--muted);font-size:13px">Нет активных клиентов. Установите NUT Monitor Service (Windows) или nut-heartbeat (Linux).</div>';
+    } else {
+      const rows = clients.map(c => {
+        const ago = c.last_seen ? timeSince(c.last_seen) : '—';
+        const bat = c.battery >= 0 ? `${c.battery}%` : '—';
+        return `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:8px;font-weight:600">${c.hostname || '—'}</td>
+          <td style="padding:8px;font-family:monospace;color:var(--muted)">${c.ip}</td>
+          <td style="padding:8px">${c.ups || '—'}</td>
+          <td style="padding:8px">${clientStatusBadge(c.status)}</td>
+          <td style="padding:8px;font-weight:600">${bat}</td>
+          <td style="padding:8px;color:var(--muted);font-size:12px">${ago}</td>
+        </tr>`;
+      }).join('');
+      html = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="color:var(--muted);font-size:12px;border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:6px 8px">Хост</th>
+          <th style="text-align:left;padding:6px 8px">IP</th>
+          <th style="text-align:left;padding:6px 8px">ИБП</th>
+          <th style="text-align:left;padding:6px 8px">Статус</th>
+          <th style="text-align:left;padding:6px 8px">Батарея</th>
+          <th style="text-align:left;padding:6px 8px">Обновлено</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
     }
-    const rows = clients.map(c => {
-      const ago = c.last_seen ? timeSince(c.last_seen) : '—';
-      const bat = c.battery >= 0 ? `${c.battery}%` : '—';
-      return `<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:8px;font-weight:600">${c.hostname || '—'}</td>
-        <td style="padding:8px;font-family:monospace;color:var(--muted)">${c.ip}</td>
-        <td style="padding:8px">${c.ups || '—'}</td>
-        <td style="padding:8px">${clientStatusBadge(c.status)}</td>
-        <td style="padding:8px;font-weight:600">${bat}</td>
-        <td style="padding:8px;color:var(--muted);font-size:12px">${ago}</td>
-      </tr>`;
-    }).join('');
-    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
-      <thead><tr style="color:var(--muted);font-size:12px;border-bottom:1px solid var(--border)">
-        <th style="text-align:left;padding:6px 8px">Хост</th>
-        <th style="text-align:left;padding:6px 8px">IP</th>
-        <th style="text-align:left;padding:6px 8px">ИБП</th>
-        <th style="text-align:left;padding:6px 8px">Статус</th>
-        <th style="text-align:left;padding:6px 8px">Батарея</th>
-        <th style="text-align:left;padding:6px 8px">Обновлено</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
+    targets.forEach(el => el.innerHTML = html);
   } catch(e) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:13px">Ошибка загрузки</div>';
+    targets.forEach(el => el.innerHTML = '<div style="color:var(--muted);font-size:13px">Ошибка загрузки</div>');
   }
 }
 
