@@ -230,10 +230,11 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 
       <!-- Клиенты -->
       <div class="card" style="margin-bottom:16px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <div class="section-title" style="margin:0">Подключённые клиенты</div>
           <button class="btn btn-gray btn-sm" onclick="loadNutClients()">🔄</button>
         </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Активные TCP соединения на порт 3493 — клиенты WinNUT-Client и upsmon</p>
         <div id="dash-clients"><div style="color:var(--muted);font-size:13px">Загрузка...</div></div>
       </div>
 
@@ -284,10 +285,11 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
 
       <!-- Мониторинг клиентов -->
       <div class="card" style="margin-bottom:16px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <div class="section-title" style="margin:0">Мониторинг клиентов</div>
           <button class="btn btn-gray btn-sm" onclick="loadMonitoredClients()">↻ Обновить</button>
         </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Клиенты с установленной службой <b>NUT Monitor Service</b> (Windows). Обновляется каждые 30 сек.</p>
         <div id="monitored-clients-table">
           <div style="color:var(--muted);font-size:13px">Загрузка...</div>
         </div>
@@ -962,32 +964,43 @@ async function sendCmdDirect(ups, cmd) {
 }
 
 // ─── Monitored clients table ───
+function clientStatusBadge(st) {
+  if (!st || st === 'OFFLINE') return '<span style="color:#6b7280">⚫ Недоступен</span>';
+  const flags = [];
+  if (st.includes('OL'))   flags.push('<span style="color:#22c55e">✅ Сеть</span>');
+  if (st.includes('OB'))   flags.push('<span style="color:#f59e0b">⚠️ Батарея</span>');
+  if (st.includes('LB'))   flags.push('<span style="color:#ef4444">🔴 Низкий заряд</span>');
+  if (st.includes('CHRG')) flags.push('<span style="color:#60a5fa">⚡ Заряжается</span>');
+  if (st.includes('TRIM')) flags.push('<span style="color:#a78bfa">📉 Срез напр.</span>');
+  if (st.includes('BOOST'))flags.push('<span style="color:#fb923c">📈 Подъём напр.</span>');
+  if (st.includes('FSD'))  flags.push('<span style="color:#ef4444">🔴 Выкл!</span>');
+  if (st.includes('RB'))   flags.push('<span style="color:#f59e0b">🔋 Замени АКБ</span>');
+  return flags.length ? flags.join(' ') : `<span style="color:#6b7280">${st}</span>`;
+}
+
 async function loadMonitoredClients() {
   const el = document.getElementById('monitored-clients-table');
   if (!el) return;
   try {
     const clients = await api('/api/clients/monitored');
     if (!clients.length) {
-      el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет активных клиентов. Клиенты появятся после установки NUT Monitor Service.</div>';
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет активных клиентов. Клиенты появятся после установки <b>NUT Monitor Service</b> на Windows машинах.</div>';
       return;
     }
-    const STATUS_COLOR = { OL:'#22c55e', OB:'#f59e0b', LB:'#ef4444', OFFLINE:'#6b7280' };
     const rows = clients.map(c => {
-      const st = c.status || 'OFFLINE';
-      const color = Object.entries(STATUS_COLOR).find(([k]) => st.includes(k))?.[1] || '#6b7280';
       const ago = c.last_seen ? timeSince(c.last_seen) : '—';
       const bat = c.battery >= 0 ? `${c.battery}%` : '—';
-      return `<tr>
-        <td style="font-family:monospace;font-weight:600">${c.hostname || c.ip}</td>
-        <td style="font-family:monospace;color:var(--muted)">${c.ip}</td>
-        <td>${c.ups || '—'}</td>
-        <td><span style="color:${color};font-weight:600">${st}</span></td>
-        <td>${bat}</td>
-        <td style="color:var(--muted);font-size:12px">${ago}</td>
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px;font-weight:600">${c.hostname || '—'}</td>
+        <td style="padding:8px;font-family:monospace;color:var(--muted)">${c.ip}</td>
+        <td style="padding:8px">${c.ups || '—'}</td>
+        <td style="padding:8px">${clientStatusBadge(c.status)}</td>
+        <td style="padding:8px;font-weight:600">${bat}</td>
+        <td style="padding:8px;color:var(--muted);font-size:12px">${ago}</td>
       </tr>`;
     }).join('');
     el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
-      <thead><tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+      <thead><tr style="color:var(--muted);font-size:12px;border-bottom:1px solid var(--border)">
         <th style="text-align:left;padding:6px 8px">Хост</th>
         <th style="text-align:left;padding:6px 8px">IP</th>
         <th style="text-align:left;padding:6px 8px">ИБП</th>
