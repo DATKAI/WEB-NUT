@@ -27,7 +27,7 @@ def send_ntfy(url: str, message: str, title: str = "NUT Monitor", priority: str 
         import ssl, subprocess
         # Используем curl — он работает там где Python urllib зависает (TLS в РФ)
         result = subprocess.run(
-            ["curl", "-sf", "--max-time", "10",
+            ["curl", "-sfL", "--max-time", "10",
              "-X", "POST", url,
              "-H", f"Title: {title}",
              "-H", f"Priority: {priority}",
