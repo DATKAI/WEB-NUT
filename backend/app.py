@@ -655,6 +655,216 @@ async def script_monitor_bat(request: Request):
         headers={"Content-Disposition": "attachment; filename=nut-monitor.bat"})
 
 
+@app.get("/api/scripts/nut-service-install.zip")
+async def script_service_zip(request: Request):
+    require_user(request)
+    ip = _get_server_ip(request)
+    user, password = _get_slave_creds()
+    ups_list = _get_ups_names()
+    ups = ups_list[0]
+
+    ps1 = f"""# NUT Service Installer
+# Installs NUT monitor as a Windows Service via NSSM
+# Runs as SYSTEM — works without any user logged in
+# Run as Administrator
+
+param([switch]$Uninstall)
+
+$ServiceName = "NUT-Monitor"
+$InstallDir  = "C:\\NUT-Monitor"
+$ScriptPath  = "$InstallDir\\nut-monitor.ps1"
+$NssmPath    = "$InstallDir\\nssm.exe"
+$LogPath     = "$InstallDir\\nut-monitor.log"
+
+$ServerHost  = "{ip}"
+$ServerPort  = 3493
+$UpsName     = "{ups}"
+$Login       = "{user}"
+$Password    = "{password}"
+
+function Write-Step($n, $msg) {{
+    Write-Host "[$n] $msg" -ForegroundColor Yellow
+}}
+
+# ── Удаление ──────────────────────────────────────────────
+if ($Uninstall) {{
+    Write-Host "Removing NUT-Monitor service..." -ForegroundColor Yellow
+    & $NssmPath stop $ServiceName 2>$null
+    & $NssmPath remove $ServiceName confirm 2>$null
+    Write-Host "Done. Service removed." -ForegroundColor Green
+    Write-Host "Press any key..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    exit
+}}
+
+Write-Host "=== NUT Monitor Service Installer ===" -ForegroundColor Cyan
+Write-Host "Server: ${{ServerHost}}:$ServerPort   UPS: $UpsName"
+Write-Host ""
+
+# ── 1. Создаём папку ──────────────────────────────────────
+Write-Step 1 "Creating $InstallDir ..."
+New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+
+# ── 2. Скачиваем NSSM ─────────────────────────────────────
+Write-Step 2 "Downloading NSSM (service wrapper)..."
+$nssmZip = "$env:TEMP\\nssm.zip"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+try {{
+    Invoke-WebRequest "https://nssm.cc/release/nssm-2.24.zip" -OutFile $nssmZip -UseBasicParsing
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $zip = [IO.Compression.ZipFile]::OpenRead($nssmZip)
+    $entry = $zip.Entries | Where-Object {{ $_.FullName -like "*win64/nssm.exe" }} | Select-Object -First 1
+    if (-not $entry) {{
+        $entry = $zip.Entries | Where-Object {{ $_.Name -eq "nssm.exe" }} | Select-Object -First 1
+    }}
+    [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $NssmPath, $true)
+    $zip.Dispose()
+    Write-Host "  NSSM ready: $NssmPath"
+}} catch {{
+    Write-Host "  ERROR: Cannot download NSSM. Check internet connection." -ForegroundColor Red
+    Write-Host "  Download manually from https://nssm.cc and put nssm.exe to $InstallDir"
+    pause; exit 1
+}}
+
+# ── 3. Создаём скрипт мониторинга ─────────────────────────
+Write-Step 3 "Writing monitor script to $ScriptPath ..."
+$monitorScript = @'
+param()
+$Server   = "{ip}"
+$Port     = 3493
+$UPS      = "{ups}"
+$Login    = "{user}"
+$Password = "{password}"
+$Log      = "C:\\NUT-Monitor\\nut-monitor.log"
+
+New-Item -ItemType Directory -Force -Path (Split-Path $Log) | Out-Null
+
+function Write-Log($msg) {{
+    $line = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  $msg"
+    Add-Content -Path $Log -Value $line
+}}
+
+function Get-UpsVar($varName) {{
+    try {{
+        $tcp = [Net.Sockets.TcpClient]::new($Server, $Port)
+        $tcp.ReceiveTimeout = 5000; $tcp.SendTimeout = 5000
+        $s = $tcp.GetStream()
+        $w = [IO.StreamWriter]::new($s); $w.AutoFlush = $true
+        $r = [IO.StreamReader]::new($s)
+        $w.WriteLine("USERNAME $Login");   $r.ReadLine() | Out-Null
+        $w.WriteLine("PASSWORD $Password"); $r.ReadLine() | Out-Null
+        $w.WriteLine("GET VAR $UPS $varName")
+        $resp = $r.ReadLine()
+        $tcp.Close()
+        if ($resp -match '"(.+)"') {{ return $Matches[1] }}
+    }} catch {{ }}
+    return $null
+}}
+
+Write-Log "=== NUT Monitor started. Server: $Server  UPS: $UPS ==="
+$prevStatus = ""
+
+while ($true) {{
+    $status = Get-UpsVar "ups.status"
+    if ($null -eq $status) {{
+        Write-Log "WARN: Cannot reach NUT server ${{Server}}:$Port"
+        Start-Sleep -Seconds 30
+        continue
+    }}
+    if ($status -ne $prevStatus) {{
+        $charge = Get-UpsVar "battery.charge"
+        Write-Log "Status: $prevStatus -> $status  (battery: ${{charge}}%)"
+        $prevStatus = $status
+    }}
+    if ($status -like "*LB*" -or ($status -like "*OB*" -and [int]($charge ?? 100) -lt 15)) {{
+        Write-Log "!!! LOW BATTERY — shutting down in 30 seconds !!!"
+        Start-Sleep -Seconds 30
+        Write-Log "Shutdown NOW"
+        Stop-Computer -Force
+        exit
+    }}
+    Start-Sleep -Seconds 30
+}}
+'@
+# Подставляем реальные значения
+$monitorScript = $monitorScript `
+    -replace '\\{{Server\\}}', $ServerHost `
+    -replace '\\{{Port\\}}',   $ServerPort `
+    -replace '\\{{UPS\\}}',    $UpsName `
+    -replace '\\{{Login\\}}',  $Login `
+    -replace '\\{{Password\\}}',$Password
+
+$monitorScript | Out-File -FilePath $ScriptPath -Encoding UTF8 -Force
+Write-Host "  Script written."
+
+# ── 4. Удаляем старую службу если есть ───────────────────
+Write-Step 4 "Registering Windows service '$ServiceName'..."
+$existing = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+if ($existing) {{
+    & $NssmPath stop $ServiceName 2>$null | Out-Null
+    & $NssmPath remove $ServiceName confirm 2>$null | Out-Null
+    Start-Sleep 2
+}}
+
+# ── 5. Регистрируем службу через NSSM ────────────────────
+& $NssmPath install $ServiceName powershell.exe
+& $NssmPath set $ServiceName AppParameters "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$ScriptPath`""
+& $NssmPath set $ServiceName AppDirectory $InstallDir
+& $NssmPath set $ServiceName DisplayName "NUT UPS Monitor"
+& $NssmPath set $ServiceName Description "Monitors UPS via NUT server. Auto-shutdown on low battery."
+& $NssmPath set $ServiceName Start SERVICE_AUTO_START
+& $NssmPath set $ServiceName ObjectName LocalSystem
+& $NssmPath set $ServiceName AppStdout $LogPath
+& $NssmPath set $ServiceName AppStderr $LogPath
+& $NssmPath set $ServiceName AppRestartDelay 5000
+
+# ── 6. Запускаем ─────────────────────────────────────────
+Write-Step 5 "Starting service..."
+Start-Service -Name $ServiceName
+Start-Sleep 2
+$svc = Get-Service -Name $ServiceName
+$color = if ($svc.Status -eq "Running") {{ "Green" }} else {{ "Red" }}
+Write-Host "  Service status: $($svc.Status)" -ForegroundColor $color
+
+Write-Host ""
+Write-Host "=== Done! ===" -ForegroundColor Green
+Write-Host "Service '$ServiceName' installed and running as SYSTEM."
+Write-Host "Starts automatically with Windows — no user login required."
+Write-Host ""
+Write-Host "Log file : $LogPath"
+Write-Host "To remove: run this script with -Uninstall"
+Write-Host ""
+Write-Host "Press any key to exit..."
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+"""
+
+    ps1 = ps1.replace("{ups}", ups).replace("{user}", user).replace("{password}", password).replace("{ip}", ip)
+
+    bat = f"""@echo off
+:: NUT Service Installer — NUT Server: {ip}
+:: Installs NUT monitor as Windows Service (runs without user login)
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Requesting administrator rights...
+    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    exit /b
+)
+
+echo.
+echo  NUT Monitor Service Installer
+echo  Server: {ip}   UPS: {ups}
+echo.
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0nut-service-install.ps1"
+"""
+
+    from fastapi.responses import Response as FR
+    data = _make_zip(("nut-service-install.ps1", ps1), ("nut-service-install.bat", bat))
+    return FR(content=data, media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=nut-service-install.zip"})
+
+
 # ─────────── Клиенты ───────────
 
 @app.get("/api/clients")

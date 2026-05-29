@@ -368,40 +368,36 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
           </div>
         </div>
 
-        <!-- Вариант 2 — PowerShell служба -->
+        <!-- Вариант 2 — NSSM служба -->
         <div class="card">
-          <div class="section-title">Вариант 2 — Автозапуск без входа пользователя (Scheduled Task)</div>
+          <div class="section-title">Вариант 2 — Служба Windows (без входа пользователя)</div>
           <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-            PowerShell скрипт устанавливается как задача планировщика от имени SYSTEM — работает всегда, даже если никто не вошёл в Windows. При низком заряде выключает ПК.
+            Устанавливает PowerShell мониторинг как настоящую службу Windows через NSSM. Запускается автоматически при старте ПК от имени SYSTEM — без входа пользователя. При низком заряде выключает ПК.
           </p>
+          <div style="margin-bottom:20px">
+            <a class="btn btn-green" href="/api/scripts/nut-service-install.zip" download style="text-decoration:none">
+              ⬇ Скачать nut-service-install.zip
+            </a>
+          </div>
           <div class="step">
             <div class="step-num">1</div>
             <div class="step-body">
-              <div class="step-title">Создай файл C:\nut-monitor\nut-monitor.ps1</div>
-              <p style="font-size:12px;color:var(--muted);margin-bottom:6px">Содержимое скрипта (подставь свои данные):</p>
-              <div class="code-block" style="margin-top:4px" id="win-ps1-content">
-$Server = "192.168.10.3"; $Port = 3493<br>
-$UPS = "ippon"; $Login = "upslave"; $Pass = "password"<br>
-$Log = "C:\nut-monitor\nut.log"<br>
-function Get-Var($v){try{$t=[Net.Sockets.TcpClient]::new($Server,$Port);$s=$t.GetStream();$w=[IO.StreamWriter]::new($s);$w.AutoFlush=$true;$r=[IO.StreamReader]::new($s);$w.WriteLine("USERNAME $Login");$r.ReadLine()|Out-Null;$w.WriteLine("PASSWORD $Pass");$r.ReadLine()|Out-Null;$w.WriteLine("GET VAR $UPS $v");$resp=$r.ReadLine();$t.Close();if($resp -match '"(.+)"'){return $Matches[1]}}catch{}};<br>
-while($true){$st=Get-Var "ups.status";Add-Content $Log "$(Get-Date -f 'HH:mm:ss') $st";if($st -like "*LB*"){Stop-Computer -Force};Start-Sleep 30}
-                <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
-              </div>
+              <div class="step-title">Распакуй архив и запусти nut-service-install.bat от администратора</div>
+              <p style="font-size:12px;color:var(--muted)">Правой кнопкой → «Запуск от имени администратора». Скрипт скачает NSSM и установит службу автоматически.</p>
             </div>
           </div>
           <div class="step">
             <div class="step-num">2</div>
             <div class="step-body">
-              <div class="step-title">Установи задачу планировщика (PowerShell от администратора)</div>
-              <div class="code-block" style="margin-top:6px" id="win-task-cmd">$a=New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -WindowStyle Hidden -File C:\nut-monitor\nut-monitor.ps1"; $t=New-ScheduledTaskTrigger -AtStartup; $p=New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest; Register-ScheduledTask -TaskName "NUT-Monitor" -Action $a -Trigger $t -Principal $p -Force; Start-ScheduledTask "NUT-Monitor"<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
+              <div class="step-title">Что установится</div>
+              <p style="font-size:12px;color:var(--muted)">Служба <b>NUT-Monitor</b> в services.msc — тип запуска «Авто», работает от SYSTEM. Лог: <code>C:\NUT-Monitor\nut-monitor.log</code></p>
             </div>
           </div>
           <div class="step">
             <div class="step-num">3</div>
             <div class="step-body">
-              <div class="step-title">Проверь лог работы</div>
-              <div class="code-block" style="margin-top:6px">Get-Content C:\nut-monitor\nut.log -Tail 20<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
-              <p style="font-size:12px;color:var(--muted);margin-top:6px">Задача запускается от SYSTEM — работает без входа пользователя, с момента старта Windows</p>
+              <div class="step-title">Удаление</div>
+              <div class="code-block" style="margin-top:6px">powershell -File nut-service-install.ps1 -Uninstall<button class="copy-btn" onclick="copyCode(this)">Копировать</button></div>
             </div>
           </div>
         </div>
