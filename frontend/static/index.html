@@ -397,7 +397,7 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
             Устанавливает PowerShell мониторинг как настоящую службу Windows через NSSM. Запускается автоматически при старте ПК от имени SYSTEM — без входа пользователя. При низком заряде выключает ПК.
           </p>
           <div style="margin-bottom:20px">
-            <a class="btn btn-green" href="/api/scripts/nut-service-install.zip" download style="text-decoration:none">
+            <a class="btn btn-green" id="btn-service-zip" href="/api/scripts/nut-service-install.zip" download style="text-decoration:none">
               ⬇ Скачать nut-service-install.zip
             </a>
           </div>
@@ -1098,6 +1098,10 @@ NOTIFYFLAG LOWBATT SYSLOG+WALL
 EOF`;
   setCodeBlock('cmd-linux-upsmon', linuxUpsmon);
   setCodeBlock('cmd-linux-check', `upsc ${ups}@${ip}`);
+
+  // Обновляем ссылку на ZIP со скриптом службы — подставляем выбранный UPS
+  const btnZip = document.getElementById('btn-service-zip');
+  if (btnZip) btnZip.href = `/api/scripts/nut-service-install.zip?ups=${encodeURIComponent(ups)}`;
 
   // Linux heartbeat script
   const heartbeat = `cat > /usr/local/bin/nut-heartbeat.sh << 'SCRIPT'
