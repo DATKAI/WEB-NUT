@@ -24,7 +24,8 @@ def send_ntfy(url: str, message: str, title: str = "NUT Monitor", priority: str 
     if not url:
         return False
     try:
-        # url например: https://ntfy.sh/my-nut-monitor-topic
+        # Принудительно используем HTTP — HTTPS может зависать (TLS проблемы в РФ)
+        url = url.replace("https://ntfy.sh/", "http://ntfy.sh/")
         data = message.encode("utf-8")
         req = urllib.request.Request(url, data=data, method="POST")
         req.add_header("Title", title)
