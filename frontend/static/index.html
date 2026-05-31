@@ -588,6 +588,7 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
         <div class="tab" data-tab="s-tg">Telegram</div>
         <div class="tab" data-tab="s-email">Email / SMTP</div>
         <div class="tab" data-tab="s-notify">Правила</div>
+        <div class="tab" data-tab="s-backup">Бэкап</div>
       </div>
 
       <!-- ntfy -->
@@ -669,6 +670,67 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
           </div>
         </div>
       </div>
+
+      <!-- Бэкап -->
+      <div class="tab-pane" id="tab-s-backup">
+        <div class="card" style="margin-bottom:16px">
+          <div class="section-title">Резервная копия настроек</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:20px">
+            Сохраняет все настройки панели, устройства ИБП и пользователей NUT в JSON файл.
+            Пароли пользователей панели <b>не включаются</b> в бэкап.
+          </p>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:600px">
+            <!-- Экспорт -->
+            <div style="background:var(--stat-bg);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+              <div style="font-size:36px;margin-bottom:10px">📦</div>
+              <div style="font-size:15px;font-weight:700;margin-bottom:6px">Создать бэкап</div>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Скачает JSON файл с настройками</p>
+              <button class="btn btn-blue" onclick="downloadBackup()" style="width:100%">⬇ Скачать бэкап</button>
+            </div>
+
+            <!-- Импорт -->
+            <div style="background:var(--stat-bg);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+              <div style="font-size:36px;margin-bottom:10px">📂</div>
+              <div style="font-size:15px;font-weight:700;margin-bottom:6px">Восстановить</div>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Загрузи ранее сохранённый JSON файл</p>
+              <label style="display:block;width:100%;padding:7px 14px;background:#16a34a;color:#fff;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;text-align:center">
+                ⬆ Выбрать файл
+                <input type="file" accept=".json" style="display:none" onchange="uploadRestore(this)">
+              </label>
+            </div>
+          </div>
+
+          <!-- Результат восстановления -->
+          <div id="restore-result" style="display:none;margin-top:16px"></div>
+        </div>
+
+        <!-- Что входит в бэкап -->
+        <div class="card">
+          <div class="section-title">Что сохраняется</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;font-size:13px">
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
+              <span style="color:var(--green)">✅</span> Настройки панели
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
+              <span style="color:var(--green)">✅</span> Устройства ИБП
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
+              <span style="color:var(--green)">✅</span> NUT пользователи
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
+              <span style="color:var(--green)">✅</span> Настройки уведомлений
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
+              <span style="color:var(--muted)">⏭</span> Пользователи панели (роли без паролей)
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
+              <span style="color:var(--red)">❌</span> Метрики и события (большой объём)
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </div><!-- /content -->
@@ -1681,6 +1743,65 @@ async function exportEvents() {
   a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
   a.download = `events_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
+}
+
+// ─── Backup / Restore ───
+async function downloadBackup() {
+  try {
+    const resp = await fetch('/api/backup', {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    if (!resp.ok) { toast('Ошибка создания бэкапа', 'err'); return; }
+    const blob = await resp.blob();
+    const cd = resp.headers.get('Content-Disposition') || '';
+    const match = cd.match(/filename=(.+)/);
+    const filename = match ? match[1] : 'nut-monitor-backup.json';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('✅ Бэкап скачан: ' + filename, 'ok');
+  } catch(e) {
+    toast('Ошибка: ' + e.message, 'err');
+  }
+}
+
+async function uploadRestore(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const resultEl = document.getElementById('restore-result');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<div style="color:var(--muted);font-size:13px">⏳ Восстановление...</div>';
+  try {
+    const text = await file.text();
+    const r = await fetch('/api/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: text
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'Ошибка');
+    const res = data.restored || {};
+    resultEl.innerHTML = `
+      <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:14px">
+        <div style="font-weight:700;color:var(--green);margin-bottom:8px">✅ Восстановлено из бэкапа от ${data.created_at || '?'}</div>
+        <div style="font-size:13px;color:var(--text);line-height:2">
+          ${res.settings ? `⚙️ Настроек: <b>${res.settings}</b><br>` : ''}
+          ${res.ups_devices !== undefined ? `🔌 Устройств ИБП: <b>${res.ups_devices}</b><br>` : ''}
+          ${res.nut_users !== undefined ? `👤 NUT пользователей: <b>${res.nut_users}</b><br>` : ''}
+          ${res.panel_users_skipped ? `<span style="color:var(--muted)">ℹ️ ${res.panel_users_skipped}</span>` : ''}
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--yellow)">⚠️ Перезагрузите страницу чтобы изменения вступили в силу</div>
+      </div>`;
+    toast('✅ Бэкап восстановлен', 'ok');
+    // Применяем конфиг NUT
+    await api('/api/nut/apply', 'POST').catch(() => {});
+  } catch(e) {
+    resultEl.innerHTML = `<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:14px;color:var(--red)">❌ Ошибка: ${e.message}</div>`;
+    toast('Ошибка восстановления', 'err');
+  }
+  input.value = '';
 }
 
 // ─── NUT Server ───

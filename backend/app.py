@@ -310,6 +310,89 @@ async def api_nut_apply(request: Request):
     return nut.restart_nut()
 
 
+# ─────────── Бэкап / Восстановление ───────────
+
+@app.get("/api/backup")
+async def api_backup(request: Request):
+    require_admin(request)
+    import json
+    from datetime import datetime
+    from fastapi.responses import Response as FR
+
+    # Собираем все данные кроме метрик и событий
+    settings = db.get_all_settings()
+    # Убираем пароли из бэкапа — нет, пусть будут (бэкап защищён авторизацией)
+    backup = {
+        "version": "1.0",
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "settings": settings,
+        "ups_devices": db.get_all_ups(),
+        "panel_users": [
+            {"username": u["username"], "role": u["role"]}
+            for u in db.get_panel_users()
+        ],
+        "nut_users": db.get_nut_users(),
+    }
+    data = json.dumps(backup, ensure_ascii=False, indent=2)
+    filename = f"nut-monitor-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+    return FR(
+        content=data.encode("utf-8"),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@app.post("/api/restore")
+async def api_restore(request: Request):
+    require_admin(request)
+    import json
+    body = await request.body()
+    try:
+        data = json.loads(body)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Неверный формат файла")
+
+    version = data.get("version", "")
+    if not version:
+        raise HTTPException(status_code=400, detail="Файл не является бэкапом NUT Monitor")
+
+    restored = {}
+
+    # Настройки
+    if "settings" in data:
+        for k, v in data["settings"].items():
+            db.set_setting(k, v)
+        restored["settings"] = len(data["settings"])
+
+    # Устройства ИБП
+    if "ups_devices" in data:
+        for d in data["ups_devices"]:
+            try:
+                db.add_ups(d["name"], d.get("description",""), d.get("vendorid",""),
+                           d.get("productid",""), d.get("serial",""),
+                           d.get("driver","usbhid-ups"), d.get("port","auto"))
+            except Exception:
+                pass
+        restored["ups_devices"] = len(data["ups_devices"])
+
+    # NUT пользователи
+    if "nut_users" in data:
+        for u in data["nut_users"]:
+            try:
+                db.add_nut_user(u["username"], u["password"], u.get("role","slave"),
+                                u.get("actions",""), u.get("instcmds",""))
+            except Exception:
+                pass
+        restored["nut_users"] = len(data["nut_users"])
+
+    # Пользователи панели — только роли, пароли не восстанавливаем
+    if "panel_users" in data:
+        restored["panel_users_skipped"] = "пароли не восстанавливаются из соображений безопасности"
+
+    db.log_event("system", "RESTORE", f"Восстановлен бэкап: {data.get('created_at','?')}")
+    return {"ok": True, "restored": restored, "created_at": data.get("created_at")}
+
+
 # ─────────── Настройки ───────────
 
 @app.get("/api/settings")
