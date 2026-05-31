@@ -224,6 +224,7 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
     <div class="nav-item" data-page="nut"><span class="icon">⚙️</span>NUT Сервер</div>
     <div class="nav-item admin-only" data-page="users"><span class="icon">👥</span>Пользователи</div>
     <div class="nav-item admin-only" data-page="settings"><span class="icon">🔔</span>Уведомления</div>
+    <div class="nav-item admin-only" data-page="backup"><span class="icon">💾</span>Бэкап</div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-info" id="user-info"></div>
@@ -588,7 +589,6 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
         <div class="tab" data-tab="s-tg">Telegram</div>
         <div class="tab" data-tab="s-email">Email / SMTP</div>
         <div class="tab" data-tab="s-notify">Правила</div>
-        <div class="tab" data-tab="s-backup">Бэкап</div>
       </div>
 
       <!-- ntfy -->
@@ -671,66 +671,130 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
         </div>
       </div>
 
-      <!-- Бэкап -->
-      <div class="tab-pane" id="tab-s-backup">
-        <div class="card" style="margin-bottom:16px">
-          <div class="section-title">Резервная копия настроек</div>
-          <p style="font-size:13px;color:var(--muted);margin-bottom:20px">
-            Сохраняет все настройки панели, устройства ИБП и пользователей NUT в JSON файл.
-            Пароли пользователей панели <b>не включаются</b> в бэкап.
-          </p>
+    </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:600px">
-            <!-- Экспорт -->
-            <div style="background:var(--stat-bg);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
-              <div style="font-size:36px;margin-bottom:10px">📦</div>
-              <div style="font-size:15px;font-weight:700;margin-bottom:6px">Создать бэкап</div>
-              <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Скачает JSON файл с настройками</p>
-              <button class="btn btn-blue" onclick="downloadBackup()" style="width:100%">⬇ Скачать бэкап</button>
+    <!-- BACKUP PAGE -->
+    <div class="page" id="page-backup">
+
+      <!-- Быстрые действия -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:20px">
+        <div class="card" style="text-align:center;padding:24px;margin:0">
+          <div style="font-size:40px;margin-bottom:10px">📦</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px">Создать бэкап</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Скачать JSON файл с настройками</p>
+          <button class="btn btn-blue" onclick="downloadBackup()" style="width:100%">⬇ Скачать</button>
+        </div>
+        <div class="card" style="text-align:center;padding:24px;margin:0">
+          <div style="font-size:40px;margin-bottom:10px">🚀</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px">Запустить сейчас</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Сохранить локально + отправить на хранилище</p>
+          <button class="btn btn-green" onclick="runBackupNow()" style="width:100%">▶ Выполнить</button>
+        </div>
+        <div class="card" style="text-align:center;padding:24px;margin:0">
+          <div style="font-size:40px;margin-bottom:10px">📂</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px">Восстановить</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Загрузить ранее сохранённый JSON</p>
+          <label style="display:block;width:100%;padding:7px 14px;background:#374151;color:#fff;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;text-align:center">
+            ⬆ Выбрать файл
+            <input type="file" accept=".json" style="display:none" onchange="uploadRestore(this)">
+          </label>
+        </div>
+      </div>
+      <div id="restore-result" style="display:none;margin-bottom:16px"></div>
+
+      <!-- Планировщик + хранилище -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+
+        <!-- Расписание -->
+        <div class="card" style="margin:0">
+          <div class="section-title">Расписание</div>
+          <div class="form-grid" style="grid-template-columns:1fr">
+            <div class="form-group">
+              <label>Автобэкап</label>
+              <select id="backup_enabled">
+                <option value="0">Выключен</option>
+                <option value="1">Включён</option>
+              </select>
             </div>
-
-            <!-- Импорт -->
-            <div style="background:var(--stat-bg);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
-              <div style="font-size:36px;margin-bottom:10px">📂</div>
-              <div style="font-size:15px;font-weight:700;margin-bottom:6px">Восстановить</div>
-              <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Загрузи ранее сохранённый JSON файл</p>
-              <label style="display:block;width:100%;padding:7px 14px;background:#16a34a;color:#fff;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;text-align:center">
-                ⬆ Выбрать файл
-                <input type="file" accept=".json" style="display:none" onchange="uploadRestore(this)">
-              </label>
+            <div class="form-group">
+              <label>Периодичность</label>
+              <select id="backup_schedule">
+                <option value="daily">Ежедневно</option>
+                <option value="weekly">Еженедельно (пн)</option>
+                <option value="monthly">Ежемесячно (1-е число)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Время запуска</label>
+              <input id="backup_time" type="time" value="03:00">
+            </div>
+            <div class="form-group">
+              <label>Хранить локальных бэкапов</label>
+              <input id="backup_keep" type="number" min="1" max="30" value="7">
+            </div>
+            <div class="form-group">
+              <label>Локальная папка</label>
+              <input id="backup_local_path" value="/opt/nut-monitor/backups">
             </div>
           </div>
-
-          <!-- Результат восстановления -->
-          <div id="restore-result" style="display:none;margin-top:16px"></div>
+          <button class="btn btn-blue" style="margin-top:14px" onclick="saveBackupSettings()">Сохранить расписание</button>
         </div>
 
-        <!-- Что входит в бэкап -->
-        <div class="card">
-          <div class="section-title">Что сохраняется</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;font-size:13px">
-            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
-              <span style="color:var(--green)">✅</span> Настройки панели
+        <!-- Удалённое хранилище -->
+        <div class="card" style="margin:0">
+          <div class="section-title">Удалённое хранилище</div>
+          <div class="form-grid" style="grid-template-columns:1fr">
+            <div class="form-group">
+              <label>Тип хранилища</label>
+              <select id="backup_dest" onchange="updateBackupDestHint()">
+                <option value="local">Только локально</option>
+                <option value="ftp">FTP</option>
+                <option value="sftp">SFTP (SSH)</option>
+                <option value="webdav">WebDAV (Яндекс.Диск / Nextcloud)</option>
+                <option value="smb">SMB / CIFS (сетевая папка)</option>
+              </select>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
-              <span style="color:var(--green)">✅</span> Устройства ИБП
+            <div id="backup-dest-hint" style="font-size:12px;color:var(--accent);padding:6px 0;display:none"></div>
+            <div class="form-group">
+              <label>Хост / URL</label>
+              <input id="backup_host" placeholder="ftp.example.com или https://webdav.yandex.ru">
             </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
-              <span style="color:var(--green)">✅</span> NUT пользователи
+            <div class="form-group">
+              <label>Порт (оставь пустым для стандартного)</label>
+              <input id="backup_port" type="number" placeholder="21 / 22 / 445">
             </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
-              <span style="color:var(--green)">✅</span> Настройки уведомлений
+            <div class="form-group">
+              <label>Логин</label>
+              <input id="backup_user" placeholder="username">
             </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
-              <span style="color:var(--muted)">⏭</span> Пользователи панели (роли без паролей)
+            <div class="form-group">
+              <label>Пароль</label>
+              <input id="backup_pass" type="password" placeholder="••••••••">
             </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--stat-bg);border:1px solid var(--border);border-radius:8px">
-              <span style="color:var(--red)">❌</span> Метрики и события (большой объём)
+            <div class="form-group">
+              <label>Удалённая папка</label>
+              <input id="backup_path" placeholder="/nut-monitor">
             </div>
           </div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn btn-blue" onclick="saveBackupSettings()">Сохранить</button>
+            <button class="btn btn-gray" onclick="testBackupConnection()">🔌 Проверить соединение</button>
+          </div>
+          <div id="backup-conn-result" style="margin-top:10px;font-size:13px;display:none"></div>
         </div>
       </div>
 
+      <!-- Локальные файлы + история -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card" style="margin:0">
+          <div class="section-title">Локальные файлы</div>
+          <div id="backup-local-files"><div style="color:var(--muted);font-size:13px">Загрузка...</div></div>
+        </div>
+        <div class="card" style="margin:0">
+          <div class="section-title">История бэкапов</div>
+          <div id="backup-history"><div style="color:var(--muted);font-size:13px">Загрузка...</div></div>
+        </div>
+      </div>
     </div>
 
   </div><!-- /content -->
@@ -956,6 +1020,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
     document.getElementById('page-' + page).classList.add('active');
     document.getElementById('page-title').textContent = item.textContent.trim();
     if (page === 'events') { loadEvents(); loadOutages(); }
+    if (page === 'backup') loadBackupPage();
     if (page === 'nut') loadNutServices();
     if (page === 'devices') loadDevicesTable();
     if (page === 'clients') { updateClientCmds(); loadMonitoredClients(); }
@@ -1746,11 +1811,28 @@ async function exportEvents() {
 }
 
 // ─── Backup / Restore ───
+const BACKUP_DEST_HINTS = {
+  ftp:    'FTP: стандартный порт 21. Папка создаётся автоматически.',
+  sftp:   'SFTP: порт 22. Требуется пакет paramiko: pip install paramiko',
+  webdav: 'Яндекс.Диск: хост https://webdav.yandex.ru, логин — email, пароль — пароль приложения.<br>Nextcloud: https://cloud.example.com/remote.php/dav/files/USERNAME',
+  smb:    'SMB: хост — IP сервера, папка — //share/subfolder. Требуется: pip install smbprotocol',
+};
+
+function updateBackupDestHint() {
+  const dest = document.getElementById('backup_dest')?.value;
+  const hint = document.getElementById('backup-dest-hint');
+  if (!hint) return;
+  if (dest && BACKUP_DEST_HINTS[dest]) {
+    hint.innerHTML = '💡 ' + BACKUP_DEST_HINTS[dest];
+    hint.style.display = 'block';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
 async function downloadBackup() {
   try {
-    const resp = await fetch('/api/backup', {
-      headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    });
+    const resp = await fetch('/api/backup/download');
     if (!resp.ok) { toast('Ошибка создания бэкапа', 'err'); return; }
     const blob = await resp.blob();
     const cd = resp.headers.get('Content-Disposition') || '';
@@ -1764,6 +1846,89 @@ async function downloadBackup() {
     toast('✅ Бэкап скачан: ' + filename, 'ok');
   } catch(e) {
     toast('Ошибка: ' + e.message, 'err');
+  }
+}
+
+async function runBackupNow() {
+  toast('⏳ Создание бэкапа...', 'ok');
+  const r = await api('/api/backup/run', 'POST').catch(e => ({ ok: false, error: e.message }));
+  if (r.ok) {
+    toast(`✅ Бэкап создан: ${r.filename} → ${r.destination}`, 'ok');
+    loadBackupPage();
+  } else {
+    toast(`❌ Ошибка: ${r.error}`, 'err');
+  }
+}
+
+async function saveBackupSettings() {
+  const fields = ['backup_enabled','backup_schedule','backup_time','backup_keep',
+                  'backup_local_path','backup_dest','backup_host','backup_port',
+                  'backup_user','backup_path'];
+  await saveSettings(fields);
+  // Пароль отдельно если не маска
+  const pass = document.getElementById('backup_pass')?.value;
+  if (pass && pass !== '••••••••') {
+    await api('/api/settings', 'POST', { backup_pass: pass });
+  }
+  toast('Настройки бэкапа сохранены', 'ok');
+}
+
+async function testBackupConnection() {
+  const resultEl = document.getElementById('backup-conn-result');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<span style="color:var(--muted)">⏳ Проверка...</span>';
+  await saveBackupSettings();
+  const r = await api('/api/backup/test-connection', 'POST').catch(e => ({ ok: false, message: e.message }));
+  resultEl.innerHTML = r.ok
+    ? `<span style="color:var(--green)">✅ ${r.message}</span>`
+    : `<span style="color:var(--red)">❌ ${r.message}</span>`;
+}
+
+async function loadBackupPage() {
+  // Настройки
+  const s = await api('/api/settings').catch(() => ({}));
+  const bFields = ['backup_enabled','backup_schedule','backup_time','backup_keep',
+                   'backup_local_path','backup_dest','backup_host','backup_port',
+                   'backup_user','backup_path'];
+  bFields.forEach(k => { const el = document.getElementById(k); if (el) el.value = s[k] || ''; });
+  updateBackupDestHint();
+
+  // Локальные файлы
+  const files = await api('/api/backup/local-files').catch(() => []);
+  const filesEl = document.getElementById('backup-local-files');
+  if (filesEl) {
+    if (!files.length) {
+      filesEl.innerHTML = '<div style="color:var(--muted);font-size:13px">Нет локальных бэкапов</div>';
+    } else {
+      filesEl.innerHTML = files.map(f => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <div>
+            <div style="font-weight:600">${f.filename}</div>
+            <div style="font-size:11px;color:var(--muted)">${f.ts} · ${f.size_kb} KB</div>
+          </div>
+          <a href="/api/backup/local/${encodeURIComponent(f.filename)}" download class="btn btn-gray btn-sm">⬇</a>
+        </div>`).join('');
+    }
+  }
+
+  // История
+  const history = await api('/api/backup/history').catch(() => []);
+  const histEl = document.getElementById('backup-history');
+  if (histEl) {
+    if (!history.length) {
+      histEl.innerHTML = '<div style="color:var(--muted);font-size:13px">История пуста</div>';
+    } else {
+      histEl.innerHTML = history.map(h => `
+        <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
+          <span style="color:${h.status==='ok'?'var(--green)':'var(--red)'}">${h.status==='ok'?'✅':'❌'}</span>
+          <div style="flex:1">
+            <div>${h.ts} → <b>${h.destination}</b></div>
+            <div style="color:var(--muted)">${h.filename}</div>
+            ${h.error ? `<div style="color:var(--red);font-size:11px">${h.error}</div>` : ''}
+          </div>
+          <span style="color:var(--muted)">${h.size_kb} KB</span>
+        </div>`).join('');
+    }
   }
 }
 

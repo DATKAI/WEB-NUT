@@ -68,6 +68,16 @@ def init_db():
             runtime INTEGER
         );
 
+        CREATE TABLE IF NOT EXISTS backup_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            size_kb INTEGER,
+            destination TEXT DEFAULT 'local',
+            status TEXT DEFAULT 'ok',
+            error TEXT
+        );
+
         CREATE TABLE IF NOT EXISTS outages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ups TEXT NOT NULL,
@@ -102,6 +112,18 @@ def init_db():
         "smtp_password": "",
         "smtp_to": "",
         "ntfy_url": "",
+        # Бэкап
+        "backup_enabled": "0",
+        "backup_schedule": "daily",       # daily / weekly / monthly
+        "backup_time": "03:00",           # HH:MM
+        "backup_keep": "7",               # сколько хранить локальных бэкапов
+        "backup_local_path": "/opt/nut-monitor/backups",
+        "backup_dest": "local",           # local / ftp / sftp / webdav / smb
+        "backup_host": "",
+        "backup_port": "",
+        "backup_user": "",
+        "backup_pass": "",
+        "backup_path": "/nut-monitor",    # удалённая папка
         "notify_onbatt": "1",
         "notify_lowbatt": "1",
         "notify_online": "1",
@@ -261,6 +283,25 @@ def delete_nut_user(username):
     conn.execute("DELETE FROM nut_users WHERE username=?", (username,))
     conn.commit()
     conn.close()
+
+
+# --- История бэкапов ---
+def log_backup(filename: str, size_kb: int, destination: str, status: str, error: str = None):
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO backup_history (ts, filename, size_kb, destination, status, error) VALUES (?,?,?,?,?,?)",
+        (now(), filename, size_kb, destination, status, error)
+    )
+    conn.commit()
+    conn.close()
+
+def get_backup_history(limit: int = 30):
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM backup_history ORDER BY id DESC LIMIT ?", (limit,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 # --- Отключения питания ---

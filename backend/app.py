@@ -12,6 +12,7 @@ import db
 import nut
 import notify
 import auth
+import backup as bkp
 
 app = FastAPI(title="NUT Monitor")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -60,6 +61,37 @@ ws_manager = WsManager()
 
 # --- Отслеживание статусов ---
 prev_status: dict = {}
+_last_backup_day = _last_backup_week = _last_backup_month = ""
+
+async def backup_scheduler():
+    global _last_backup_day, _last_backup_week, _last_backup_month
+    while True:
+        await asyncio.sleep(60)
+        try:
+            s = db.get_all_settings()
+            if s.get("backup_enabled") != "1":
+                continue
+            schedule = s.get("backup_schedule", "daily")
+            btime    = s.get("backup_time", "03:00")
+            now_dt   = datetime.now()
+            now_hm   = now_dt.strftime("%H:%M")
+            today    = now_dt.strftime("%Y-%m-%d")
+            week     = now_dt.strftime("%Y-W%W")
+            month    = now_dt.strftime("%Y-%m")
+            should   = False
+            if schedule == "daily" and now_hm == btime and _last_backup_day != today:
+                should = True; _last_backup_day = today
+            elif schedule == "weekly" and now_dt.weekday() == 0 and now_hm == btime and _last_backup_week != week:
+                should = True; _last_backup_week = week
+            elif schedule == "monthly" and now_dt.day == 1 and now_hm == btime and _last_backup_month != month:
+                should = True; _last_backup_month = month
+            if should:
+                print(f"[backup] scheduled ({schedule})...")
+                result = bkp.run_backup(s)
+                print(f"[backup] {'OK' if result['ok'] else 'ERROR'}: {result.get('filename')}")
+        except Exception as e:
+            print(f"[backup_scheduler] {e}")
+
 
 def human_status(st: str) -> str:
     """Человекочитаемый статус ИБП"""
@@ -170,6 +202,7 @@ async def poll_loop():
 async def startup():
     db.init_db()
     asyncio.create_task(poll_loop())
+    asyncio.create_task(backup_scheduler())
 
 
 # ─────────── Страницы ───────────
@@ -312,35 +345,87 @@ async def api_nut_apply(request: Request):
 
 # ─────────── Бэкап / Восстановление ───────────
 
-@app.get("/api/backup")
-async def api_backup(request: Request):
+@app.get("/api/backup/download")
+async def api_backup_download(request: Request):
+    """Скачать бэкап как JSON файл"""
     require_admin(request)
-    import json
-    from datetime import datetime
     from fastapi.responses import Response as FR
+    filename, content = bkp.make_backup_json()
+    return FR(content=content, media_type="application/json",
+              headers={"Content-Disposition": f"attachment; filename={filename}"})
 
-    # Собираем все данные кроме метрик и событий
-    settings = db.get_all_settings()
-    # Убираем пароли из бэкапа — нет, пусть будут (бэкап защищён авторизацией)
-    backup = {
-        "version": "1.0",
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "settings": settings,
-        "ups_devices": db.get_all_ups(),
-        "panel_users": [
-            {"username": u["username"], "role": u["role"]}
-            for u in db.get_panel_users()
-        ],
-        "nut_users": db.get_nut_users(),
-    }
-    data = json.dumps(backup, ensure_ascii=False, indent=2)
-    filename = f"nut-monitor-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
-    return FR(
-        content=data.encode("utf-8"),
-        media_type="application/json",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+@app.post("/api/backup/run")
+async def api_backup_run(request: Request):
+    """Запустить бэкап вручную (с отправкой на удалённое хранилище)"""
+    require_admin(request)
+    s = db.get_all_settings()
+    result = bkp.run_backup(s)
+    return result
 
+@app.get("/api/backup/history")
+async def api_backup_history(request: Request):
+    require_admin(request)
+    return db.get_backup_history(30)
+
+@app.get("/api/backup/local-files")
+async def api_backup_local_files(request: Request):
+    """Список локальных файлов бэкапа"""
+    require_admin(request)
+    import glob, os
+    s = db.get_all_settings()
+    path = s.get("backup_local_path", "/opt/nut-monitor/backups")
+    files = sorted(glob.glob(os.path.join(path, "nut-monitor-backup-*.json")), reverse=True)
+    result = []
+    for f in files[:20]:
+        stat = os.stat(f)
+        result.append({
+            "filename": os.path.basename(f),
+            "size_kb": stat.st_size // 1024 or 1,
+            "ts": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+        })
+    return result
+
+@app.get("/api/backup/local/{filename}")
+async def api_backup_local_download(filename: str, request: Request):
+    """Скачать конкретный локальный файл бэкапа"""
+    require_admin(request)
+    import os
+    s = db.get_all_settings()
+    path = s.get("backup_local_path", "/opt/nut-monitor/backups")
+    full = os.path.join(path, filename)
+    if not os.path.exists(full) or ".." in filename:
+        raise HTTPException(status_code=404)
+    from fastapi.responses import FileResponse
+    return FileResponse(full, media_type="application/json",
+                        headers={"Content-Disposition": f"attachment; filename={filename}"})
+
+@app.post("/api/backup/test-connection")
+async def api_backup_test(request: Request):
+    """Проверить подключение к удалённому хранилищу"""
+    require_admin(request)
+    s = db.get_all_settings()
+    dest = s.get("backup_dest", "local")
+    if dest == "local":
+        return {"ok": True, "message": "Локальное хранилище — проверка не нужна"}
+    try:
+        test_content = b'{"test": "NUT Monitor connection test"}'
+        test_name = "nut-monitor-test.json"
+        host = s.get("backup_host", "")
+        user = s.get("backup_user", "")
+        password = s.get("backup_pass", "")
+        remote = s.get("backup_path", "/nut-monitor")
+        port = int(s.get("backup_port") or 0)
+        if dest == "ftp":
+            bkp.send_ftp(test_name, test_content, host, port, user, password, remote)
+        elif dest == "sftp":
+            bkp.send_sftp(test_name, test_content, host, port, user, password, remote)
+        elif dest == "webdav":
+            bkp.send_webdav(test_name, test_content, host, user, password, remote)
+        elif dest == "smb":
+            bkp.send_smb(test_name, test_content, host, port, user, password, remote)
+        return {"ok": True, "message": f"Подключение к {dest.upper()} успешно!"}
+    except Exception as e:
+        return {"ok": False, "message": str(e)}
 
 @app.post("/api/restore")
 async def api_restore(request: Request):
@@ -351,20 +436,13 @@ async def api_restore(request: Request):
         data = json.loads(body)
     except Exception:
         raise HTTPException(status_code=400, detail="Неверный формат файла")
-
-    version = data.get("version", "")
-    if not version:
+    if not data.get("version"):
         raise HTTPException(status_code=400, detail="Файл не является бэкапом NUT Monitor")
-
     restored = {}
-
-    # Настройки
     if "settings" in data:
         for k, v in data["settings"].items():
             db.set_setting(k, v)
         restored["settings"] = len(data["settings"])
-
-    # Устройства ИБП
     if "ups_devices" in data:
         for d in data["ups_devices"]:
             try:
@@ -374,8 +452,6 @@ async def api_restore(request: Request):
             except Exception:
                 pass
         restored["ups_devices"] = len(data["ups_devices"])
-
-    # NUT пользователи
     if "nut_users" in data:
         for u in data["nut_users"]:
             try:
@@ -384,11 +460,8 @@ async def api_restore(request: Request):
             except Exception:
                 pass
         restored["nut_users"] = len(data["nut_users"])
-
-    # Пользователи панели — только роли, пароли не восстанавливаем
     if "panel_users" in data:
-        restored["panel_users_skipped"] = "пароли не восстанавливаются из соображений безопасности"
-
+        restored["panel_users_skipped"] = "пароли не восстанавливаются"
     db.log_event("system", "RESTORE", f"Восстановлен бэкап: {data.get('created_at','?')}")
     return {"ok": True, "restored": restored, "created_at": data.get("created_at")}
 

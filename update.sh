@@ -25,6 +25,7 @@ cp backend/db.py      "$INSTALL_DIR/"
 cp backend/nut.py     "$INSTALL_DIR/"
 cp backend/notify.py  "$INSTALL_DIR/"
 cp backend/auth.py    "$INSTALL_DIR/"
+cp backend/backup.py  "$INSTALL_DIR/"
 cp frontend/static/*.html "$INSTALL_DIR/static/"
 
 # Обновить зависимости если изменились
