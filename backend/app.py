@@ -1158,6 +1158,13 @@ async def api_clients_monitored(request: Request):
     require_user(request)
     return db.get_monitored_clients(timeout_minutes=5)
 
+@app.delete("/api/clients/monitored/{ip}")
+async def api_client_delete(ip: str, request: Request):
+    require_admin(request)
+    db.delete_client(ip)
+    _client_alive.pop(ip, None)
+    return {"ok": True}
+
 
 @app.get("/api/clients")
 async def api_clients(request: Request):

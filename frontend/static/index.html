@@ -1437,9 +1437,13 @@ async function loadMonitoredClients() {
     if (!clients.length) {
       html = '<div style="color:var(--muted);font-size:13px">Нет активных клиентов. Установите NUT Monitor Service (Windows) или nut-heartbeat (Linux).</div>';
     } else {
+      const isAdmin = currentRole === 'admin';
       const rows = clients.map(c => {
         const ago = c.last_seen ? timeSince(c.last_seen) : '—';
         const bat = c.battery >= 0 ? `${c.battery}%` : '—';
+        const delBtn = isAdmin
+          ? `<td style="padding:8px"><button class="btn btn-gray btn-sm" title="Удалить из списка" onclick="deleteMonitoredClient('${c.ip}','${(c.hostname||c.ip).replace(/'/g,"")}')">✕</button></td>`
+          : '';
         return `<tr style="border-bottom:1px solid var(--border)">
           <td style="padding:8px;font-weight:600">${c.hostname || '—'}</td>
           <td style="padding:8px;font-family:monospace;color:var(--muted)">${c.ip}</td>
@@ -1447,6 +1451,7 @@ async function loadMonitoredClients() {
           <td style="padding:8px">${clientStatusBadge(c.status)}</td>
           <td style="padding:8px;font-weight:600">${bat}</td>
           <td style="padding:8px;color:var(--muted);font-size:12px">${ago}</td>
+          ${delBtn}
         </tr>`;
       }).join('');
       html = `<table style="width:100%;border-collapse:collapse;font-size:13px">
@@ -1457,6 +1462,7 @@ async function loadMonitoredClients() {
           <th style="text-align:left;padding:6px 8px">Статус</th>
           <th style="text-align:left;padding:6px 8px">Батарея</th>
           <th style="text-align:left;padding:6px 8px">Обновлено</th>
+          ${isAdmin ? '<th style="text-align:left;padding:6px 8px"></th>' : ''}
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
@@ -1467,6 +1473,14 @@ async function loadMonitoredClients() {
   } catch(e) {
     targets.forEach(el => el.innerHTML = '<div style="color:var(--muted);font-size:13px">Ошибка загрузки</div>');
   }
+}
+
+async function deleteMonitoredClient(ip, name) {
+  confirmDanger(`Удалить клиента ${name}?`, 'Запись удалится из списка. Если служба ещё работает — клиент появится снова при следующем heartbeat.', '🖥️', async () => {
+    await api(`/api/clients/monitored/${ip}`, 'DELETE');
+    toast('Клиент удалён', 'ok');
+    loadMonitoredClients();
+  });
 }
 
 function timeSince(tsStr) {

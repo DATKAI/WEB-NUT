@@ -430,6 +430,13 @@ def get_monitored_clients(timeout_minutes=5):
     return [dict(r) for r in rows]
 
 
+def delete_client(ip: str):
+    conn = get_conn()
+    conn.execute("DELETE FROM monitored_clients WHERE ip=?", (ip,))
+    conn.commit()
+    conn.close()
+
+
 # --- События ---
 def log_event(ups, status, message):
     conn = get_conn()
