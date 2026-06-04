@@ -902,6 +902,101 @@ async def script_monitor_bat(request: Request):
         headers={"Content-Disposition": "attachment; filename=nut-monitor.bat"})
 
 
+@app.get("/api/scripts/nut-test.zip")
+async def script_test_zip(request: Request, ups: str = ""):
+    """Тестовый скрипт: проверка связи + опциональный тест выключения"""
+    require_user(request)
+    ip = _get_server_ip(request)
+    user, password = _get_slave_creds()
+    ups = ups or (_get_ups_names() or ["ups"])[0]
+
+    test_lines = [
+        "# NUT Client Test - auto-generated",
+        "# Checks connection to NUT server and optionally tests shutdown",
+        f'$Server   = "{ip}"',
+        "$Port     = 3493",
+        f'$UPS      = "{ups}"',
+        f'$Login    = "{user}"',
+        f'$Password = "{password}"',
+        "",
+        "function Get-UpsVar($v) {",
+        "    $tcp = $null",
+        "    try {",
+        "        $tcp = [Net.Sockets.TcpClient]::new()",
+        "        if (-not $tcp.ConnectAsync($Server, $Port).Wait(5000)) { return 'TIMEOUT' }",
+        "        $s = $tcp.GetStream(); $s.ReadTimeout = 5000",
+        "        $w = [IO.StreamWriter]::new($s); $w.AutoFlush = $true",
+        "        $r = [IO.StreamReader]::new($s)",
+        '        $w.WriteLine("USERNAME $Login");    $r.ReadLine() | Out-Null',
+        '        $w.WriteLine("PASSWORD $Password"); $r.ReadLine() | Out-Null',
+        '        $w.WriteLine("GET VAR $UPS $v")',
+        "        $resp = $r.ReadLine()",
+        '        if ($resp -match \'"(.+)"\') { return $Matches[1] }',
+        "        return $resp",
+        "    } catch { return \"ERROR: $_\" }",
+        "    finally { if ($tcp) { try { $tcp.Close() } catch { } } }",
+        "}",
+        "",
+        '$Host.UI.RawUI.WindowTitle = "NUT Client Test"',
+        'Write-Host ""',
+        'Write-Host "=== NUT Client Test ===" -ForegroundColor Cyan',
+        f'Write-Host "Server: {ip}:3493   UPS: {ups}   Login: {user}"',
+        'Write-Host ""',
+        'Write-Host "[1] Connection test..." -ForegroundColor Yellow',
+        '$status = Get-UpsVar "ups.status"',
+        '$charge = Get-UpsVar "battery.charge"',
+        '$runtime = Get-UpsVar "battery.runtime"',
+        'Write-Host "    UPS status   : $status"',
+        'Write-Host "    Battery      : $charge%"',
+        'Write-Host "    Runtime      : $runtime sec"',
+        'Write-Host ""',
+        'if ($status -match "OL|OB") {',
+        '    Write-Host "[OK] Client CAN reach the server and read data" -ForegroundColor Green',
+        '} else {',
+        '    Write-Host "[FAIL] Connection problem: $status" -ForegroundColor Red',
+        '    Write-Host "    Check: server IP, port 3493, login/password, firewall"',
+        '    Read-Host "Press Enter to exit"; exit',
+        '}',
+        'Write-Host ""',
+        'Write-Host "[2] Shutdown test (optional)" -ForegroundColor Yellow',
+        'Write-Host "    This will REALLY shut down THIS computer in 60 seconds." -ForegroundColor Red',
+        'Write-Host "    You can cancel within 60 sec by running: shutdown /a" -ForegroundColor Red',
+        'Write-Host ""',
+        '$ans = Read-Host "Run real shutdown test? Type yes to confirm"',
+        'if ($ans -eq "yes") {',
+        '    shutdown /s /t 60 /c "NUT test shutdown - cancel with: shutdown /a"',
+        '    Write-Host ""',
+        '    Write-Host "Shutdown scheduled in 60 sec!" -ForegroundColor Red',
+        '    Write-Host "To CANCEL run now:  shutdown /a" -ForegroundColor Yellow',
+        '    Write-Host ""',
+        '    $c = Read-Host "Type cancel to abort now, or Enter to let it shut down"',
+        '    if ($c -eq "cancel") { shutdown /a; Write-Host "Shutdown cancelled." -ForegroundColor Green }',
+        '} else {',
+        '    Write-Host "Shutdown test skipped." -ForegroundColor Gray',
+        '}',
+        'Write-Host ""',
+        'Read-Host "Press Enter to exit"',
+    ]
+    test_ps1 = "\r\n".join(test_lines)
+
+    test_bat = (
+        "@echo off\r\n"
+        f":: NUT Client Test - {ip}\r\n"
+        "net session >nul 2>&1\r\n"
+        "if %errorlevel% neq 0 (\r\n"
+        "    echo Requesting administrator rights...\r\n"
+        "    powershell -Command \"Start-Process '%~f0' -Verb RunAs\"\r\n"
+        "    exit /b\r\n"
+        ")\r\n"
+        "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"%~dp0nut-test.ps1\"\r\n"
+    )
+
+    from fastapi.responses import Response as FR
+    data = _make_zip(("nut-test.ps1", test_ps1), ("nut-test.bat", test_bat))
+    return FR(content=data, media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=nut-test.zip"})
+
+
 @app.get("/api/scripts/nut-service-install.zip")
 async def script_service_zip(request: Request, ups: str = ""):
     require_user(request)

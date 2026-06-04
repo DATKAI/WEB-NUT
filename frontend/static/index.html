@@ -478,6 +478,33 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
             </div>
           </div>
         </div>
+
+        <!-- Тест клиента -->
+        <div class="card" style="border-left:3px solid var(--yellow)">
+          <div class="section-title">🧪 Проверка клиента (тест)</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+            Проверяет связь с сервером и готовность к выключению. Можно безопасно протестировать <b>реальное выключение одного ПК</b> с возможностью отмены — не затрагивая другие серверы.
+          </p>
+          <div style="margin-bottom:16px">
+            <a class="btn btn-yellow" id="btn-test-zip" href="/api/scripts/nut-test.zip" download style="text-decoration:none">
+              ⬇ Скачать nut-test.zip
+            </a>
+          </div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Запусти nut-test.bat от администратора</div>
+              <p style="font-size:12px;color:var(--muted)">Покажет статус ИБП, заряд и запас хода — проверка что клиент видит сервер</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Тест выключения (по желанию)</div>
+              <p style="font-size:12px;color:var(--muted)">Скрипт спросит — выполнить реальное выключение через 60 сек. Можно отменить командой <code>shutdown /a</code> или вводом «cancel»</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1552,9 +1579,11 @@ EOF`;
   setCodeBlock('cmd-linux-upsmon', linuxUpsmon);
   setCodeBlock('cmd-linux-check', `upsc ${ups}@${ip}`);
 
-  // Обновляем ссылку на ZIP со скриптом службы — подставляем выбранный UPS
+  // Обновляем ссылки на ZIP — подставляем выбранный UPS
   const btnZip = document.getElementById('btn-service-zip');
   if (btnZip) btnZip.href = `/api/scripts/nut-service-install.zip?ups=${encodeURIComponent(ups)}`;
+  const btnTest = document.getElementById('btn-test-zip');
+  if (btnTest) btnTest.href = `/api/scripts/nut-test.zip?ups=${encodeURIComponent(ups)}`;
 
   // Linux heartbeat script
   const heartbeat = `cat > /usr/local/bin/nut-heartbeat.sh << 'SCRIPT'
