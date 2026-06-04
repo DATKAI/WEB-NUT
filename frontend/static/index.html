@@ -664,9 +664,12 @@ textarea{resize:vertical;font-family:monospace;font-size:12px;}
             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
               <input type="checkbox" id="notify_online"> Питание восстановлено (OL)
             </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;border-top:1px solid var(--border);padding-top:14px">
+              <input type="checkbox" id="notify_client_offline"> ⛔ Клиент пропал из мониторинга (молчит &gt;5 мин)
+            </label>
           </div>
           <div style="margin-top:16px">
-            <button class="btn btn-blue" onclick="saveSettings(['notify_onbatt','notify_lowbatt','notify_online'])">Сохранить</button>
+            <button class="btn btn-blue" onclick="saveSettings(['notify_onbatt','notify_lowbatt','notify_online','notify_client_offline'])">Сохранить</button>
           </div>
         </div>
       </div>
@@ -2071,7 +2074,7 @@ async function loadSettings() {
   const fields = ['ntfy_url','tg_token','tg_chat_id','smtp_host','smtp_port','smtp_user','smtp_password','smtp_to',
                   'nut_admin_user','nut_admin_pass','low_batt_threshold','shutdown_delay','poll_interval'];
   fields.forEach(k => { const el = document.getElementById(k); if (el) el.value = s[k] || ''; });
-  ['notify_onbatt','notify_lowbatt','notify_online'].forEach(k => {
+  ['notify_onbatt','notify_lowbatt','notify_online','notify_client_offline'].forEach(k => {
     const el = document.getElementById(k);
     if (el) el.checked = s[k] === '1';
   });

@@ -124,6 +124,7 @@ def init_db():
         "backup_user": "",
         "backup_pass": "",
         "backup_path": "/nut-monitor",    # удалённая папка
+        "notify_client_offline": "1",
         "notify_onbatt": "1",
         "notify_lowbatt": "1",
         "notify_online": "1",

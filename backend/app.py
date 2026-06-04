@@ -198,11 +198,51 @@ async def poll_loop():
         await asyncio.sleep(interval)
 
 
+_client_alive: dict = {}  # ip -> bool (последнее известное состояние)
+
+async def client_liveness_monitor():
+    """Следит за клиентами: уведомляет если клиент пропал из мониторинга"""
+    # Стартовая задержка чтобы дать клиентам зарегистрироваться
+    await asyncio.sleep(120)
+    while True:
+        try:
+            settings = db.get_all_settings()
+            if settings.get("notify_client_offline") != "1":
+                await asyncio.sleep(60)
+                continue
+
+            # Клиенты активные за последние 5 мин (по last_seen)
+            active = {c["ip"]: c for c in db.get_monitored_clients(timeout_minutes=5)}
+            # Все клиенты вообще (включая молчащие)
+            all_clients = {c["ip"]: c for c in db.get_monitored_clients(timeout_minutes=999999)}
+
+            for ip, c in all_clients.items():
+                is_alive = ip in active
+                was_alive = _client_alive.get(ip)
+                host = c.get("hostname") or ip
+
+                if was_alive is True and not is_alive:
+                    # Клиент пропал
+                    db.log_event("client", "OFFLINE", f"⛔ Клиент {host} ({ip}) пропал из мониторинга")
+                    notify.notify_all(settings, host, "Клиент офлайн",
+                                      f"⛔ Клиент {host} ({ip}) перестал отвечать! Проверьте службу NUT-Monitor.")
+                elif was_alive is False and is_alive:
+                    db.log_event("client", "ONLINE", f"✅ Клиент {host} ({ip}) снова в сети")
+                    notify.notify_all(settings, host, "Клиент онлайн",
+                                      f"✅ Клиент {host} ({ip}) снова на связи")
+
+                _client_alive[ip] = is_alive
+        except Exception as e:
+            print(f"[client_liveness] Ошибка: {e}")
+        await asyncio.sleep(60)
+
+
 @app.on_event("startup")
 async def startup():
     db.init_db()
     asyncio.create_task(poll_loop())
     asyncio.create_task(backup_scheduler())
+    asyncio.create_task(client_liveness_monitor())
 
 
 # ─────────── Страницы ───────────
@@ -880,28 +920,44 @@ async def script_service_zip(request: Request, ups: str = ""):
         f'$PanelUrl  = "http://{ip}:8000/api/clients/register"',
         '$Hostname   = $env:COMPUTERNAME',
         '$Log        = "C:\\NUT-Monitor\\nut-monitor.log"',
+        "$MaxFails   = 20   # последовательных провалов до самоперезапуска (~10 мин)",
         "",
         "New-Item -ItemType Directory -Force -Path (Split-Path $Log) | Out-Null",
         "",
         "function Write-Log($msg) {",
         "    $ts = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'",
         '    Add-Content -Path $Log -Value "$ts  $msg"',
+        "    # Ротация лога если > 1 МБ",
+        "    try {",
+        "        $f = Get-Item $Log -ErrorAction SilentlyContinue",
+        "        if ($f -and $f.Length -gt 1MB) {",
+        "            $tail = Get-Content $Log -Tail 200",
+        "            Set-Content -Path $Log -Value $tail",
+        "        }",
+        "    } catch { }",
         "}",
         "",
+        "# Надёжный запрос с жёстким таймаутом на подключение И чтение.",
+        "# Конструктор TcpClient(host,port) подключается синхронно и может зависнуть",
+        "# навсегда — поэтому используем ConnectAsync с таймаутом.",
         "function Get-UpsVar($varName) {",
+        "    $tcp = $null",
         "    try {",
-        "        $tcp = [Net.Sockets.TcpClient]::new($Server, $Port)",
+        "        $tcp = [Net.Sockets.TcpClient]::new()",
+        "        $connect = $tcp.ConnectAsync($Server, $Port)",
+        "        if (-not $connect.Wait(5000)) { $tcp.Close(); return $null }  # таймаут подключения",
         "        $tcp.ReceiveTimeout = 5000; $tcp.SendTimeout = 5000",
         "        $s = $tcp.GetStream()",
+        "        $s.ReadTimeout = 5000; $s.WriteTimeout = 5000",
         "        $w = [IO.StreamWriter]::new($s); $w.AutoFlush = $true",
         "        $r = [IO.StreamReader]::new($s)",
         '        $w.WriteLine("USERNAME $Login");    $r.ReadLine() | Out-Null',
         '        $w.WriteLine("PASSWORD $Password"); $r.ReadLine() | Out-Null',
         '        $w.WriteLine("GET VAR $UPS $varName")',
         "        $resp = $r.ReadLine()",
-        "        $tcp.Close()",
         '        if ($resp -match \'VAR .+ .+ "(.+)"\') { return $Matches[1] }',
         "    } catch { }",
+        "    finally { if ($tcp) { try { $tcp.Close() } catch { } } }",
         "    return $null",
         "}",
         "",
@@ -914,15 +970,24 @@ async def script_service_zip(request: Request, ups: str = ""):
         "",
         'Write-Log "=== NUT Monitor started. Server: $Server  UPS: $UPS ==="',
         '$prevStatus = ""',
+        "$failCount  = 0",
         "",
         "while ($true) {",
         '    $status = Get-UpsVar "ups.status"',
         "    if ($null -eq $status) {",
-        '        Write-Log "WARN: Cannot reach ${Server}:$Port"',
+        "        $failCount++",
+        '        Write-Log "WARN: Cannot reach ${Server}:$Port (fail $failCount/$MaxFails)"',
         "        Send-Heartbeat 'OFFLINE' -1",
+        "        # Watchdog: если слишком много провалов подряд — выходим,",
+        "        # WinSW автоматически перезапустит свежий процесс.",
+        "        if ($failCount -ge $MaxFails) {",
+        '            Write-Log "!!! Watchdog: $MaxFails провалов подряд — перезапуск службы"',
+        "            exit 1",
+        "        }",
         "        Start-Sleep -Seconds 30",
         "        continue",
         "    }",
+        "    $failCount = 0  # сброс счётчика при успехе",
         '    $charge = Get-UpsVar "battery.charge"',
         '    $chargeInt = if ($charge) { [int]$charge } else { -1 }',
         "    Send-Heartbeat $status $chargeInt",
@@ -1009,6 +1074,8 @@ async def script_service_zip(request: Request, ups: str = ""):
         '  <log mode="none"/>',
         '  <onfailure action="restart" delay="5 sec"/>',
         '  <onfailure action="restart" delay="10 sec"/>',
+        '  <onfailure action="restart" delay="15 sec"/>',
+        '  <resetfailure>1 hour</resetfailure>',
         '</service>',
         '"@',
         '$xml = $xml -f $ScriptPath',
